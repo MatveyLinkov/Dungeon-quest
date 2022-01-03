@@ -147,6 +147,20 @@ class Shot(pygame.sprite.Sprite):
             self.kill()
 
 
+class Camera:
+    def __init__(self):
+        self.dx = 0
+        self.dy = 0
+
+    def apply(self, obj):
+        obj.rect.x += self.dx
+        obj.rect.y += self.dy
+
+    def update(self, target):
+        self.dx = width // 2 - target.rect.x - target.rect.w // 2
+        self.dy = height // 2 - target.rect.y - target.rect.h // 2
+
+
 def generate_level(level):
     new_player, x, y = None, None, None
     for y in range(len(level)):
