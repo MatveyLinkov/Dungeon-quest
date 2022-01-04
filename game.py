@@ -70,6 +70,8 @@ player_image = pygame.transform.scale(load_image('creature-1.png'), (40, 40))
 dummy_image = load_image('dummy.png')
 rock_image = pygame.transform.scale(load_image('rock.png'), (50, 50))
 rock_break_image = pygame.transform.scale(load_image('rock_break.png'), (50, 50))
+#  closed_chest_image = pygame.transform.scale(load_image('closed_chest.png'), (50, 50))
+#  opened_chest_image = pygame.transform.scale(load_image('opened_chest.png'), (50, 50))
 chest_image = pygame.transform.scale(load_image('chest.png'), (50, 50))
 tile_width = tile_height = 50
 player = None
@@ -97,7 +99,7 @@ class Tile(pygame.sprite.Sprite):
 
 class Rock(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y):
-        super().__init__(rocks_group, enemy_group, all_sprites)
+        super().__init__(rocks_group, all_sprites)
         self.image = rock_image
         self.rect = self.image.get_rect()
         self.rect = self.rect.move(tile_width * pos_x, tile_height * pos_y + 50)
@@ -166,7 +168,7 @@ class Chest(pygame.sprite.Sprite):
         super().__init__(chest_group, all_sprites)
         self.image = chest_image
         self.rect = self.image.get_rect()
-        self.rect = self.rect.move(tile_width * pos_x + 10, tile_height * pos_y + 55)
+        self.rect = self.rect.move(tile_width * pos_x, tile_height * pos_y + 55)
 
     def update(self, button):
         if pygame.sprite.spritecollideany(self, player_group):
@@ -215,7 +217,8 @@ class Shot(pygame.sprite.Sprite):
     def update(self, damage):
         self.rect = self.rect.move(self.vx, self.vy)
         if pygame.sprite.spritecollideany(self, enemy_group) and damage or \
-                pygame.sprite.spritecollideany(self, walls_group):
+                pygame.sprite.spritecollideany(self, walls_group) or \
+                pygame.sprite.spritecollideany(self, rocks_group) and damage:
             self.kill()
 
 
