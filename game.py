@@ -4,9 +4,9 @@ import pygame
 import random
 
 pygame.init()
-pygame.joystick.init()
-js = pygame.joystick.Joystick(0)
-js.init()
+#  pygame.joystick.init()
+#  js = pygame.joystick.Joystick(0)
+#  js.init()
 size = width, height = 750, 450
 screen = pygame.display.set_mode(size)
 all_sprites = pygame.sprite.Group()
@@ -16,6 +16,7 @@ rocks_group = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
 enemy_group = pygame.sprite.Group()
 shot_group = pygame.sprite.Group()
+chest_group = pygame.sprite.Group()
 
 
 def load_level(filename):
@@ -42,6 +43,10 @@ def load_image(name, colorkey=None):
     return image
 
 
+inventory = {
+    'silver_sword': pygame.transform.scale(load_image('silver_sword.png'), (30, 30)),
+    'diamond_sword': pygame.transform.scale(load_image('diamond_sword.png'), (30, 30))
+}
 tile_images = {
     'wall_1': pygame.transform.scale(load_image('wall_1.png'), (50, 50)),
     'wall_2': pygame.transform.scale(load_image('wall_2.png'), (50, 50)),
@@ -59,6 +64,7 @@ player_image = pygame.transform.scale(load_image('creature-1.png'), (40, 40))
 dummy_image = load_image('dummy.png')
 rock_image = pygame.transform.scale(load_image('rock.png'), (50, 50))
 rock_break_image = pygame.transform.scale(load_image('rock_break.png'), (50, 50))
+chest_image = pygame.transform.scale(load_image('chest.png'), (50, 50))
 tile_width = tile_height = 50
 player = None
 dummy = None
@@ -91,9 +97,12 @@ class Rock(pygame.sprite.Sprite):
         self.rect = self.rect.move(tile_width * pos_x, tile_height * pos_y)
         self.hp = 2
 
-    def update(self):
+    def update(self, weapon='silver_sword'):
         if pygame.sprite.spritecollideany(self, shot_group):
-            self.hp -= 1
+            if weapon == 'silver_sword':
+                self.hp -= 1
+            elif weapon == 'diamond_sword':
+                self.hp -= 100
             shot_group.update(True)
             if self.hp <= 0:
                 self.kill()
@@ -123,12 +132,30 @@ class Enemy(pygame.sprite.Sprite):
         self.rect = self.rect.move(tile_width * pos_x + 10, tile_height * pos_y + 5)
         self.hp = 3
 
-    def update(self):
+    def update(self, weapon='silver_sword'):
         if pygame.sprite.spritecollideany(self, shot_group):
-            self.hp -= 1
+            if weapon == 'silver_sword':
+                self.hp -= 1
+            elif weapon == 'diamond_sword':
+                self.hp -= 100
             shot_group.update(True)
-            if self.hp == 0:
+            if self.hp <= 0:
                 self.kill()
+
+
+class Chest(pygame.sprite.Sprite):
+    def __init__(self, pos_x, pos_y):
+        super().__init__(chest_group, all_sprites)
+        self.image = chest_image
+        self.rect = self.image.get_rect()
+        self.rect = self.rect.move(tile_width * pos_x + 10, tile_height * pos_y + 5)
+
+    def update(self, button):
+        if pygame.sprite.spritecollideany(self, player_group):
+            if button == 'e':
+                self.kill()
+            if button is None:
+                pass
 
 
 class Shot(pygame.sprite.Sprite):
@@ -190,9 +217,12 @@ def generate_level(level):
             elif level[y][x] == '&':
                 Tile('empty', x, y)
                 Enemy(x, y)
-            elif level[y][x] == '?':
+            elif level[y][x] == '*':
                 Tile('empty', x, y)
                 Rock(x, y)
+            elif level[y][x] == '?':
+                Tile('empty', x, y)
+                Chest(x, y)
     return new_player, x, y
 
 
@@ -203,6 +233,7 @@ if __name__ == '__main__':
     player, level_x, level_y = generate_level(load_level('demo.txt'))
     x, y = 0, 0
     v = 1
+    button = None
     running = True
     while running:
         screen.fill(pygame.Color('black'))
@@ -218,7 +249,6 @@ if __name__ == '__main__':
                     x += v
                 elif event.key == pygame.K_s:
                     y += v
-                moving = True
                 if event.key == pygame.K_LEFT:
                     shot = Shot(player.rect.x - 14, player.rect.y + 14, 7, -2, 0)
                 elif event.key == pygame.K_RIGHT:
@@ -227,6 +257,8 @@ if __name__ == '__main__':
                     shot = Shot(player.rect.x + 14, player.rect.y - 14, 7, 0, -2)
                 elif event.key == pygame.K_DOWN:
                     shot = Shot(player.rect.x + 14, player.rect.y + 40, 7, 0, 2)
+                if event.key == pygame.K_e:
+                    button = 'e'
             elif event.type == pygame.KEYUP:
                 if event.key == pygame.K_a:
                     x += v
@@ -239,10 +271,13 @@ if __name__ == '__main__':
         player.rect.x += x
         player.rect.y += y
         player.update(x, y)
+        chest_group.update(button)
+        button = None
         enemy_group.update()
         shot_group.update(False)
         rocks_group.update()
         tiles_group.draw(screen)
+        chest_group.draw(screen)
         enemy_group.draw(screen)
         player_group.draw(screen)
         shot_group.draw(screen)
