@@ -1,27 +1,22 @@
 import os
 import sys
 import pygame
-import random
+import pytmx
+import numpy as np
 
+print('Нажмите F для уничтожения всех дверей')
 pygame.init()
-size = width, height = 750, 450
-fps = 200
+size = width, height = 816, 576
+FPS = 120
+MAPS_DIR = 'levels'
 screen = pygame.display.set_mode(size)
 all_sprites = pygame.sprite.Group()
 tiles_group = pygame.sprite.Group()
 walls_group = pygame.sprite.Group()
-rocks_group = pygame.sprite.Group()
+doors_group = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
-enemy_group = pygame.sprite.Group()
 shot_group = pygame.sprite.Group()
-
-
-def load_level(filename):
-    filename = 'levels/' + filename
-    with open(filename, 'r', encoding='utf-8') as mapfile:
-        level_map = [line.strip() for line in mapfile.readlines()]
-    max_width = max([len(x) for x in level_map])
-    return list(map(lambda x: x.ljust(max_width, '.'), level_map))
+enemy_group = pygame.sprite.Group()
 
 
 def load_image(name, colorkey=None):
@@ -40,26 +35,11 @@ def load_image(name, colorkey=None):
     return image
 
 
-tile_images = {
-    'wall_1': pygame.transform.scale(load_image('wall_1.png'), (50, 50)),
-    'wall_2': pygame.transform.scale(load_image('wall_2.png'), (50, 50)),
-    'wall_3': pygame.transform.scale(load_image('wall_3.png'), (50, 50)),
-    'wall_4': pygame.transform.scale(load_image('wall_4.png'), (50, 50)),
-    'wall_5': pygame.transform.scale(load_image('wall_5.png'), (50, 50)),
-    'wall_6': pygame.transform.scale(load_image('wall_6.png'), (50, 50)),
-    'wall_7': pygame.transform.scale(load_image('wall_7.png'), (50, 50)),
-    'wall_8': pygame.transform.scale(load_image('wall_8.png'), (50, 50)),
-    'empty': pygame.transform.scale(load_image('tile_2.png'), (50, 50)),
-    'empty_1': pygame.transform.scale(load_image('tile_1.png'), (50, 50)),
-    'empty_2': pygame.transform.scale(load_image('tile_3.png'), (50, 50))
-}
-player_sheet = pygame.transform.scale(load_image('knight_sheet.png'), (368, 100))
-dummy_image = load_image('dummy.png')
-rock_image = pygame.transform.scale(load_image('rock.png'), (50, 50))
-rock_break_image = pygame.transform.scale(load_image('rock_break.png'), (50, 50))
-tile_width = tile_height = 50
+player_sheet = pygame.transform.scale(load_image('knight_sheet.png'), (552, 150))
+walls = [1, 2, 3, 4, 5, 6, 11, 16, 21, 26, 31, 36, 41, 42, 43, 44, 45, 46, 51, 52, 53, 54, 55, 56,
+         37, 38, 47, 48, 49, 57, 58, 59, 67, 68]
+tile_width = tile_height = 48
 player = None
-dummy = None
 
 
 def terminate():
@@ -71,43 +51,57 @@ def start_screen():
     pass
 
 
+class Dungeon:
+    def __init__(self, filename):
+        super().__init__()
+        self.map = pytmx.load_pygame(f'{MAPS_DIR}/{filename}')
+        self.height = self.map.height
+        self.width = self.map.width
+        self.tile_size = self.map.tilewidth
+        self.player_x, self.player_y = 0, 0
+
+    def render(self):
+        for i in range(2):
+            for y in range(self.height):
+                for x in range(self.width):
+                    image = self.map.get_tile_image(x, y, i)
+                    if image:
+                        Tile(self.get_tile_id((x, y), i), x, y, image)
+                        if self.get_tile_id((x, y), i) == 39:
+                            self.player_x, self.player_y = x, y
+        return self.player_x, self.player_y
+
+    def get_tile_id(self, position, layer):
+        return self.map.tiledgidmap[self.map.get_tile_gid(*position, layer)]
+
+
 class Tile(pygame.sprite.Sprite):
-    def __init__(self, tile_type, pos_x, pos_y):
+    def __init__(self, tile_id, pos_x, pos_y, image):
         super().__init__(tiles_group, all_sprites)
-        if 'wall' in tile_type:
+        if tile_id in walls:
             self.add(walls_group)
-        self.image = tile_images[tile_type]
+            if tile_id in walls[24:]:
+                self.add(doors_group)
+        self.image = image
         self.rect = self.image.get_rect()
         self.rect = self.rect.move(tile_width * pos_x, tile_height * pos_y)
-
-
-class Rock(pygame.sprite.Sprite):
-    def __init__(self, pos_x, pos_y):
-        super().__init__(rocks_group, enemy_group, all_sprites)
-        self.image = rock_image
-        self.rect = self.image.get_rect()
-        self.rect = self.rect.move(tile_width * pos_x, tile_height * pos_y)
-        self.hp = 2
 
     def update(self):
-        if pygame.sprite.spritecollideany(self, shot_group):
-            self.hp -= 1
-            shot_group.update(True)
-            if self.hp <= 0:
-                self.kill()
-            else:
-                self.image = rock_break_image
+        if self in doors_group:
+            self.kill()
 
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, columns, rows, pos_x, pos_y):
         super().__init__(player_group, all_sprites)
-        self.frames, self.stable_frames, self.moving_frames = [], [], []
+        self.frames = []
+        self.half_frames = 48
         self.crop_sheet(player_sheet, columns, rows)
         self.cur_frame = 0
         self.image = self.frames[self.cur_frame]
         self.rect = self.image.get_rect()
-        self.rect = self.rect.move(tile_width * pos_x + 2, tile_height * pos_y)
+        self.rect = self.rect.move(tile_width * pos_x + 12, tile_height * pos_y + 12)
+        self.mask = pygame.mask.from_surface(self.image)
         self.clock = pygame.time.Clock()
 
     def crop_sheet(self, sheet, columns, rows):
@@ -117,44 +111,27 @@ class Player(pygame.sprite.Sprite):
             for j in range(columns):
                 frame_coord = (self.rect.w * j, self.rect.h * i)
                 [self.frames.append(sheet.subsurface(pygame.Rect(frame_coord, self.rect.size)))
-                 for i in range(15)]
-        self.stable_frames = self.frames[:120]
-        self.moving_frames = self.frames[120:]
+                 for i in range(6)]
 
-    def update(self, x, y):
+    def update(self, x, y, flip):
         if moving:
-            self.cur_frame = (self.cur_frame + 1) % len(self.moving_frames)
-            self.image = self.moving_frames[self.cur_frame]
+            self.cur_frame = (self.cur_frame + 1) % len(self.frames[self.half_frames:])
+            self.image = self.frames[self.half_frames:][self.cur_frame]
         else:
-            self.cur_frame = (self.cur_frame + 1) % len(self.stable_frames)
-            self.image = self.stable_frames[self.cur_frame]
-        if x < 0:
+            self.cur_frame = (self.cur_frame + 1) % len(self.frames[:self.half_frames])
+            self.image = self.frames[:self.half_frames][self.cur_frame]
+        if flip:
             self.image = pygame.transform.flip(self.image, True, False)
-        if pygame.sprite.spritecollideany(self, walls_group) or\
-                pygame.sprite.spritecollideany(self, rocks_group):
-            self.rect.x -= x
-            self.rect.y -= y
-
-
-class Enemy(pygame.sprite.Sprite):
-    def __init__(self, pos_x, pos_y):
-        super().__init__(enemy_group, all_sprites)
-        self.image = dummy_image
-        self.rect = self.image.get_rect()
-        self.rect = self.rect.move(tile_width * pos_x + 10, tile_height * pos_y + 5)
-        self.hp = 3
-
-    def update(self):
-        if pygame.sprite.spritecollideany(self, shot_group):
-            self.hp -= 1
-            shot_group.update(True)
-            if self.hp == 0:
-                self.kill()
+        if pygame.sprite.spritecollideany(self, walls_group):
+            if len(list(filter(lambda s: pygame.sprite.collide_mask(self, s),
+                               np.array(list(walls_group))))) >= 1:
+                self.rect.x -= x
+                self.rect.y -= y
 
 
 class Shot(pygame.sprite.Sprite):
     def __init__(self, x, y, radius, vx, vy):
-        super().__init__(shot_group)
+        super().__init__(shot_group, all_sprites)
         self.radius = radius
         self.image = pygame.Surface((2 * radius, 2 * radius), pygame.SRCALPHA, 32)
         pygame.draw.circle(self.image, pygame.Color((255, 45, 190)), (radius, radius), radius)
@@ -182,96 +159,76 @@ class Camera:
         self.dy = height // 2 - target.rect.y - target.rect.h // 2
 
 
-def generate_level(level):
-    new_player, x, y = None, None, None
-    for y in range(len(level)):
-        for x in range(len(level[y])):
-            if level[y][x] == '.':
-                Tile(random.choice(('empty', 'empty_1', 'empty_2')), x, y)
-            elif level[y][x] == '#':
-                if (x, y) == (0, 0):
-                    Tile('wall_1', x, y)
-                elif len(level[y]) - 1 > x > 0 and y == 0:
-                    Tile('wall_2', x, y)
-                elif (x, y) == (len(level[y]) - 1, 0):
-                    Tile('wall_3', x, y)
-                elif x == 0 and len(level) - 1 > y > 0:
-                    Tile('wall_4', x, y)
-                elif x == len(level[y]) - 1 and len(level) - 1 > y > 0:
-                    Tile('wall_5', x, y)
-                elif (x, y) == (0, len(level) - 1):
-                    Tile('wall_6', x, y)
-                elif len(level[y]) - 1 > x > 0 and y == len(level) - 1:
-                    Tile('wall_7', x, y)
-                elif (x, y) == (len(level[y]) - 1, len(level) - 1):
-                    Tile('wall_8', x, y)
-            elif level[y][x] == '@':
-                Tile('empty', x, y)
-                new_player = Player(8, 2, x, y)
-            elif level[y][x] == '&':
-                Tile('empty', x, y)
-                Enemy(x, y)
-            elif level[y][x] == '?':
-                Tile('empty', x, y)
-                Rock(x, y)
-    return new_player, x, y
-
-
 if __name__ == '__main__':
-    pygame.display.set_caption('Dungeon Quest: demo')
+    pygame.display.set_caption('Dungeon Quest: feature')
 
+    dungeon = Dungeon('dungeon_map.tmx')
     clock = pygame.time.Clock()
-    start_screen()
-    player, level_x, level_y = generate_level(load_level('demo.txt'))
+    pygame.mouse.set_visible(False)
+
+    player_x, player_y = dungeon.render()
+    player = Player(8, 2, player_x, player_y)
+
+    camera = Camera()
     x, y = 0, 0
-    v = 1
+    player_v = 3
+    shot_v = 5
+
     moving = False
+    flip = False
     running = True
     while running:
-        screen.fill(pygame.Color('black'))
+        screen.fill(pygame.Color((42, 22, 30)))
         moving = False
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_a:
-                    x -= v
+                    x -= player_v
+                    flip = True
                 elif event.key == pygame.K_w:
-                    y -= v
+                    y -= player_v
                 elif event.key == pygame.K_d:
-                    x += v
+                    x += player_v
+                    flip = False
                 elif event.key == pygame.K_s:
-                    y += v
+                    y += player_v
                 if event.key == pygame.K_LEFT:
-                    shot = Shot(player.rect.x - 14, player.rect.y + 16, 7, -2, 0)
+                    shot = Shot(player.rect.x - 20, player.rect.y + 27, 10, -shot_v, 0)
                 elif event.key == pygame.K_RIGHT:
-                    shot = Shot(player.rect.x + 46, player.rect.y + 16, 7, 2, 0)
+                    shot = Shot(player.rect.x + 69, player.rect.y + 27, 10, shot_v, 0)
                 elif event.key == pygame.K_UP:
-                    shot = Shot(player.rect.x + 16, player.rect.y - 16, 7, 0, -2)
+                    shot = Shot(player.rect.x + 27, player.rect.y - 17, 10, 0, -shot_v)
                 elif event.key == pygame.K_DOWN:
-                    shot = Shot(player.rect.x + 16, player.rect.y + 50, 7, 0, 2)
+                    shot = Shot(player.rect.x + 27, player.rect.y + 75, 10, 0, shot_v)
+                elif event.key == pygame.K_f:
+                    tiles_group.update()
+
             elif event.type == pygame.KEYUP:
                 if event.key == pygame.K_a:
-                    x += v
+                    x += player_v
                 elif event.key == pygame.K_w:
-                    y += v
+                    y += player_v
                 elif event.key == pygame.K_d:
-                    x -= v
+                    x -= player_v
                 elif event.key == pygame.K_s:
-                    y -= v
+                    y -= player_v
         if (x, y) != (0, 0):
             moving = True
+
         player.rect.x += x
         player.rect.y += y
-        player.update(x, y)
-        enemy_group.update()
+        player.update(x, y, flip)
         shot_group.update(False)
-        rocks_group.update()
+        camera.update(player)
+        for sprite in all_sprites:
+            camera.apply(sprite)
+
         tiles_group.draw(screen)
-        enemy_group.draw(screen)
         player_group.draw(screen)
         shot_group.draw(screen)
-        rocks_group.draw(screen)
-        clock.tick(fps)
+        clock.tick(FPS)
         pygame.display.flip()
     pygame.quit()
