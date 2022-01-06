@@ -4,9 +4,6 @@ import pygame
 import random
 
 pygame.init()
-pygame.joystick.init()
-js = pygame.joystick.Joystick(0)
-js.init()
 size = width, height = 750, 450
 screen = pygame.display.set_mode(size)
 all_sprites = pygame.sprite.Group()
