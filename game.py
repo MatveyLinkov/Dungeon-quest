@@ -10,6 +10,8 @@ pygame.init()
 size = width, height = 750, 500
 screen = pygame.display.set_mode(size)
 all_sprites = pygame.sprite.Group()
+inventory_group = pygame.sprite.Group()
+weapon_group = pygame.sprite.Group()
 tiles_group = pygame.sprite.Group()
 walls_group = pygame.sprite.Group()
 rocks_group = pygame.sprite.Group()
@@ -45,6 +47,10 @@ def load_image(name, colorkey=None):
     return image
 
 
+cell_image = pygame.transform.scale(load_image('inventory_cell.png'), (50, 50))
+choose_cell = pygame.transform.scale(load_image('inventory_cell1.png'), (50, 50))
+cells = [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, True]
 weapons = {
     'silver_sword': pygame.transform.scale(load_image('silver_sword.png'), (30, 30)),
     'diamond_sword': pygame.transform.scale(load_image('diamond_sword.png'), (30, 30)),
@@ -85,6 +91,27 @@ def terminate():
 
 def start_screen():
     pass
+
+
+class Inventory(pygame.sprite.Sprite):
+    def __init__(self, pos_x, choose=False, weapon=None):
+        super().__init__(inventory_group, all_sprites)
+        if choose:
+            self.image = choose_cell
+            Inventory(cells.index(True))
+            cells[cells.index(True)], cells[pos_x] = False, True
+        else:
+            self.image = cell_image
+        self.rect = self.image.get_rect()
+        self.rect = self.rect.move(pos_x * tile_width, 0)
+
+
+class WeaponInventory(pygame.sprite.Sprite):
+    def __init__(self, pos_x, weapon):
+        super().__init__(weapon_group, all_sprites)
+        self.image = weapon
+        self.rect = self.image.get_rect()
+        self.rect = self.rect.move(10 + pos_x * tile_width, 10)
 
 
 class Tile(pygame.sprite.Sprite):
@@ -238,6 +265,10 @@ class Camera:
 
 def generate_level(level):
     new_player, x, y = None, None, None
+    Inventory(0, True)
+    WeaponInventory(0, weapons['silver_sword'])
+    for i in range(1, 15):
+        Inventory(i)
     for y in range(len(level)):
         for x in range(len(level[y])):
             if level[y][x] == '.':
@@ -288,6 +319,9 @@ if __name__ == '__main__':
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if 0 <= event.pos[1] <= 50 and event.pos[0] // 50 != cells.index(True):
+                    Inventory(event.pos[0] // 50, True)
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_a:
                     x -= v
@@ -340,6 +374,8 @@ if __name__ == '__main__':
         enemy_group.update(current_weapon)
         shot_group.update(False)
         melee_group.update()
+        inventory_group.draw(screen)
+        weapon_group.draw(screen)
         tiles_group.draw(screen)
         chest_group.draw(screen)
         enemy_group.draw(screen)
