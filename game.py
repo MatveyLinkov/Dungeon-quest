@@ -85,6 +85,48 @@ player = None
 dummy = None
 
 
+def generate_level(level):
+    new_player, x, y = None, None, None
+    Inventory(0, True)
+    WeaponInventory(0, weapons['silver_sword'])
+    for i in range(1, 15):
+        Inventory(i)
+    for y in range(len(level)):
+        for x in range(len(level[y])):
+            if level[y][x] == '.':
+                Tile(random.choice(('empty', 'empty_1', 'empty_2')), x, y)
+            elif level[y][x] == '#':
+                if (x, y) == (0, 0):
+                    Tile('wall_1', x, y)
+                elif len(level[y]) - 1 > x > 0 and y == 0:
+                    Tile('wall_2', x, y)
+                elif (x, y) == (len(level[y]) - 1, 0):
+                    Tile('wall_3', x, y)
+                elif x == 0 and len(level) - 1 > y > 0:
+                    Tile('wall_4', x, y)
+                elif x == len(level[y]) - 1 and len(level) - 1 > y > 0:
+                    Tile('wall_5', x, y)
+                elif (x, y) == (0, len(level) - 1):
+                    Tile('wall_6', x, y)
+                elif len(level[y]) - 1 > x > 0 and y == len(level) - 1:
+                    Tile('wall_7', x, y)
+                elif (x, y) == (len(level[y]) - 1, len(level) - 1):
+                    Tile('wall_8', x, y)
+            elif level[y][x] == '@':
+                Tile('empty', x, y)
+                new_player = Player(x, y)
+            elif level[y][x] == '&':
+                Tile('empty', x, y)
+                Enemy(x, y)
+            elif level[y][x] == '*':
+                Tile('empty', x, y)
+                Rock(x, y)
+            elif level[y][x] == '?':
+                Tile('empty', x, y)
+                Chest(x, y)
+    return new_player, x, y
+
+
 def terminate():
     pygame.quit()
     sys.exit()
@@ -92,6 +134,19 @@ def terminate():
 
 def start_screen():
     pass
+
+
+def getting_weapon():
+    global current_weapon
+    current_weapon = random.choice(all_weapons)
+    cell_count = len(inventory)
+    WeaponInventory(cell_count, weapons[current_weapon])
+    Inventory(cell_count, True)
+
+
+def choose_weapon(pos):
+    global current_weapon
+    current_weapon = inventory[pos]
 
 
 class Inventory(pygame.sprite.Sprite):
@@ -210,19 +265,6 @@ class Chest(pygame.sprite.Sprite):
                 pass
 
 
-def getting_weapon():
-    global current_weapon
-    current_weapon = random.choice(all_weapons)
-    count = len(inventory)
-    WeaponInventory(count, weapons[current_weapon])
-    Inventory(count, True)
-
-
-def choose_weapon(pos):
-    global current_weapon
-    current_weapon = inventory[pos]
-
-
 class Melee(pygame.sprite.Sprite):
     def __init__(self, x, y, weapon, way):
         super().__init__(melee_group)
@@ -275,48 +317,6 @@ class Camera:
         self.dy = height // 2 - target.rect.y - target.rect.h // 2
 
 
-def generate_level(level):
-    new_player, x, y = None, None, None
-    Inventory(0, True)
-    WeaponInventory(0, weapons['silver_sword'])
-    for i in range(1, 15):
-        Inventory(i)
-    for y in range(len(level)):
-        for x in range(len(level[y])):
-            if level[y][x] == '.':
-                Tile(random.choice(('empty', 'empty_1', 'empty_2')), x, y)
-            elif level[y][x] == '#':
-                if (x, y) == (0, 0):
-                    Tile('wall_1', x, y)
-                elif len(level[y]) - 1 > x > 0 and y == 0:
-                    Tile('wall_2', x, y)
-                elif (x, y) == (len(level[y]) - 1, 0):
-                    Tile('wall_3', x, y)
-                elif x == 0 and len(level) - 1 > y > 0:
-                    Tile('wall_4', x, y)
-                elif x == len(level[y]) - 1 and len(level) - 1 > y > 0:
-                    Tile('wall_5', x, y)
-                elif (x, y) == (0, len(level) - 1):
-                    Tile('wall_6', x, y)
-                elif len(level[y]) - 1 > x > 0 and y == len(level) - 1:
-                    Tile('wall_7', x, y)
-                elif (x, y) == (len(level[y]) - 1, len(level) - 1):
-                    Tile('wall_8', x, y)
-            elif level[y][x] == '@':
-                Tile('empty', x, y)
-                new_player = Player(x, y)
-            elif level[y][x] == '&':
-                Tile('empty', x, y)
-                Enemy(x, y)
-            elif level[y][x] == '*':
-                Tile('empty', x, y)
-                Rock(x, y)
-            elif level[y][x] == '?':
-                Tile('empty', x, y)
-                Chest(x, y)
-    return new_player, x, y
-
-
 if __name__ == '__main__':
     pygame.display.set_caption('Dungeon Quest: demo')
     clock = pygame.time.Clock()
@@ -333,8 +333,11 @@ if __name__ == '__main__':
                 running = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if 0 <= event.pos[1] <= 50 and event.pos[0] // 50 != cells.index(True):
-                    Inventory(event.pos[0] // 50, True)
-                    choose_weapon(event.pos[0] // 50)
+                    if (event.pos[0] // 50) > len(inventory):
+                        Inventory(event.pos[0] // 50, True)
+                    else:
+                        Inventory(event.pos[0] // 50, True)
+                        choose_weapon(event.pos[0] // 50)
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_a:
                     x -= v
@@ -360,7 +363,8 @@ if __name__ == '__main__':
                     if current_weapon in guns:
                         shot = Shot(player.rect.x + 14, player.rect.y - 14, 7, 0, -2)
                     elif current_weapon in swords:
-                        melee = Melee(player.rect.x + 14, player.rect.y - 14, current_weapon, 'up')
+                        melee = Melee(player.rect.x + 14, player.rect.y - 14, current_weapon,
+                                      'up')
                 elif event.key == pygame.K_DOWN:
                     if current_weapon in guns:
                         shot = Shot(player.rect.x + 14, player.rect.y + 40, 7, 0, 2)
@@ -369,6 +373,36 @@ if __name__ == '__main__':
                                       'down')
                 if event.key == pygame.K_e:
                     button = 'e'
+                if event.key == pygame.K_1 and not (pygame.key.get_mods() & pygame.KMOD_LCTRL):
+                    Inventory(0, True)
+                if event.key == pygame.K_2 and not (pygame.key.get_mods() & pygame.KMOD_LCTRL):
+                    Inventory(1, True)
+                if event.key == pygame.K_3 and not (pygame.key.get_mods() & pygame.KMOD_LCTRL):
+                    Inventory(2, True)
+                if event.key == pygame.K_4 and not (pygame.key.get_mods() & pygame.KMOD_LCTRL):
+                    Inventory(3, True)
+                if event.key == pygame.K_5 and not (pygame.key.get_mods() & pygame.KMOD_LCTRL):
+                    Inventory(4, True)
+                if event.key == pygame.K_6 and not (pygame.key.get_mods() & pygame.KMOD_LCTRL):
+                    Inventory(5, True)
+                if event.key == pygame.K_7 and not (pygame.key.get_mods() & pygame.KMOD_LCTRL):
+                    Inventory(6, True)
+                if event.key == pygame.K_8 and not (pygame.key.get_mods() & pygame.KMOD_LCTRL):
+                    Inventory(7, True)
+                if event.key == pygame.K_9 and not (pygame.key.get_mods() & pygame.KMOD_LCTRL):
+                    Inventory(8, True)
+                if event.key == pygame.K_0 and not (pygame.key.get_mods() & pygame.KMOD_LCTRL):
+                    Inventory(9, True)
+                if event.key == pygame.K_1 and pygame.key.get_mods() & pygame.KMOD_LCTRL:
+                    Inventory(10, True)
+                if event.key == pygame.K_2 and pygame.key.get_mods() & pygame.KMOD_LCTRL:
+                    Inventory(11, True)
+                if event.key == pygame.K_3 and pygame.key.get_mods() & pygame.KMOD_LCTRL:
+                    Inventory(12, True)
+                if event.key == pygame.K_4 and pygame.key.get_mods() & pygame.KMOD_LCTRL:
+                    Inventory(13, True)
+                if event.key == pygame.K_5 and pygame.key.get_mods() & pygame.KMOD_LCTRL:
+                    Inventory(14, True)
             elif event.type == pygame.KEYUP:
                 if event.key == pygame.K_a:
                     x += v
