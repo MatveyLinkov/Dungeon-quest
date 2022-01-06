@@ -56,7 +56,8 @@ weapons = {
     'diamond_sword': pygame.transform.scale(load_image('diamond_sword.png'), (30, 30)),
     'default_blaster': pygame.transform.scale(load_image('default_blaster.png'), (30, 30))
 }
-all_weapons = ['diamond_sword', 'silver_sword', 'default_blaster']
+inventory = {}
+all_weapons = ['diamond_sword', 'default_blaster']
 swords = ['diamond_sword', 'silver_sword']
 guns = ['default_blaster']
 tile_images = {
@@ -110,6 +111,9 @@ class WeaponInventory(pygame.sprite.Sprite):
     def __init__(self, pos_x, weapon):
         super().__init__(weapon_group, all_sprites)
         self.image = weapon
+        for i in weapons:
+            if weapons[i] == weapon:
+                inventory[pos_x] = i
         self.rect = self.image.get_rect()
         self.rect = self.rect.move(10 + pos_x * tile_width, 10)
 
@@ -209,7 +213,14 @@ class Chest(pygame.sprite.Sprite):
 def getting_weapon():
     global current_weapon
     current_weapon = random.choice(all_weapons)
+    count = len(inventory)
+    WeaponInventory(count, weapons[current_weapon])
+    Inventory(count, True)
 
+
+def choose_weapon(pos):
+    global current_weapon
+    current_weapon = inventory[pos]
 
 
 class Melee(pygame.sprite.Sprite):
@@ -323,6 +334,7 @@ if __name__ == '__main__':
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if 0 <= event.pos[1] <= 50 and event.pos[0] // 50 != cells.index(True):
                     Inventory(event.pos[0] // 50, True)
+                    choose_weapon(event.pos[0] // 50)
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_a:
                     x -= v
