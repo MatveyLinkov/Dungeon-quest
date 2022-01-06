@@ -211,6 +211,7 @@ def getting_weapon():
     current_weapon = random.choice(all_weapons)
 
 
+
 class Melee(pygame.sprite.Sprite):
     def __init__(self, x, y, weapon, way):
         super().__init__(melee_group)
