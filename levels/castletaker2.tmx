@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="9" height="8" tilewidth="48" tileheight="48" infinite="0" nextlayerid="7" nextobjectid="2">
+ <tileset firstgid="1" source="../../maps/full tilemap копия.tsx"/>
+ <layer id="1" name="Слой тайлов 1" width="9" height="8">
+  <data encoding="base64" compression="zlib">
+   eJxjYCAPKACxKBZxkJg4EIsBsTwQK2JRA5MXxWOGHAH7JaDmyEHdogjlo9sjAXWHGFSdPBZ1+AAATqsCoQ==
+  </data>
+ </layer>
+ <layer id="6" name="Слой тайлов 2" width="9" height="8">
+  <data encoding="base64" compression="zlib">
+   eJxjYIAASyh2BWIdIDYFYkMGBDACYmYg1obSMICsxhWJzYRFjSuSXiYk2gyIHaF8bSR9plC+LhLbEcoGAX4ktTA2zI1maOLIatmgZpogqTWFimkjiYPEANjJBzA=
+  </data>
+ </layer>
+ <objectgroup id="4" name="Слой объектов 1">
+  <object id="1" name="Player" x="290" y="48" width="44" height="48"/>
+ </objectgroup>
+</map>
