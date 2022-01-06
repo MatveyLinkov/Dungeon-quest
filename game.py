@@ -141,12 +141,16 @@ def getting_weapon():
     current_weapon = random.choice(all_weapons)
     cell_count = len(inventory)
     WeaponInventory(cell_count, weapons[current_weapon])
-    Inventory(cell_count, True)
+    if cell_count <= 14:
+        Inventory(cell_count, True)
 
 
-def choose_weapon(pos):
+def choose_weapon(pos=None):
     global current_weapon
-    current_weapon = inventory[pos]
+    if pos is None:
+        current_weapon = None
+    else:
+        current_weapon = inventory[pos]
 
 
 class Inventory(pygame.sprite.Sprite):
@@ -166,11 +170,14 @@ class WeaponInventory(pygame.sprite.Sprite):
     def __init__(self, pos_x, weapon):
         super().__init__(weapon_group, all_sprites)
         self.image = weapon
-        for i in weapons:
-            if weapons[i] == weapon:
-                inventory[pos_x] = i
-        self.rect = self.image.get_rect()
-        self.rect = self.rect.move(10 + pos_x * tile_width, 10)
+        if weapon is None:
+            pass
+        else:
+            for i in weapons:
+                if weapons[i] == weapon:
+                    inventory[pos_x] = i
+            self.rect = self.image.get_rect()
+            self.rect = self.rect.move(10 + pos_x * tile_width, 10)
 
 
 class Tile(pygame.sprite.Sprite):
@@ -205,6 +212,8 @@ class Rock(pygame.sprite.Sprite):
                 self.hp -= 1
             if weapon == 'diamond_sword':
                 self.hp -= 3
+            if weapon is None:
+                pass
             if self.hp <= 0:
                 self.kill()
             if self.hp <= 5:
@@ -245,6 +254,8 @@ class Enemy(pygame.sprite.Sprite):
                 self.hp -= 1
             if weapon == 'diamond_sword':
                 self.hp -= 3
+            if weapon is None:
+                pass
             if self.hp <= 0:
                 self.kill()
 
@@ -259,7 +270,10 @@ class Chest(pygame.sprite.Sprite):
     def update(self, button):
         if pygame.sprite.spritecollideany(self, player_group):
             if button == 'e':
-                getting_weapon()
+                if len(inventory) < 15:
+                    getting_weapon()
+                else:
+                    print('Инвентарь полон')
                 self.kill()
             if button is None:
                 pass
@@ -375,34 +389,94 @@ if __name__ == '__main__':
                     button = 'e'
                 if event.key == pygame.K_1 and not (pygame.key.get_mods() & pygame.KMOD_LCTRL):
                     Inventory(0, True)
+                    if len(inventory) < 1:
+                        choose_weapon()
+                    else:
+                        choose_weapon(0)
                 if event.key == pygame.K_2 and not (pygame.key.get_mods() & pygame.KMOD_LCTRL):
                     Inventory(1, True)
+                    if len(inventory) < 2:
+                        choose_weapon()
+                    else:
+                        choose_weapon(1)
                 if event.key == pygame.K_3 and not (pygame.key.get_mods() & pygame.KMOD_LCTRL):
                     Inventory(2, True)
+                    if len(inventory) < 3:
+                        choose_weapon()
+                    else:
+                        choose_weapon(2)
                 if event.key == pygame.K_4 and not (pygame.key.get_mods() & pygame.KMOD_LCTRL):
                     Inventory(3, True)
+                    if len(inventory) < 4:
+                        choose_weapon()
+                    else:
+                        choose_weapon(3)
                 if event.key == pygame.K_5 and not (pygame.key.get_mods() & pygame.KMOD_LCTRL):
                     Inventory(4, True)
+                    if len(inventory) < 5:
+                        choose_weapon()
+                    else:
+                        choose_weapon(4)
                 if event.key == pygame.K_6 and not (pygame.key.get_mods() & pygame.KMOD_LCTRL):
                     Inventory(5, True)
+                    if len(inventory) < 6:
+                        choose_weapon()
+                    else:
+                        choose_weapon(5)
                 if event.key == pygame.K_7 and not (pygame.key.get_mods() & pygame.KMOD_LCTRL):
                     Inventory(6, True)
+                    if len(inventory) < 7:
+                        choose_weapon()
+                    else:
+                        choose_weapon(6)
                 if event.key == pygame.K_8 and not (pygame.key.get_mods() & pygame.KMOD_LCTRL):
                     Inventory(7, True)
+                    if len(inventory) < 8:
+                        choose_weapon()
+                    else:
+                        choose_weapon(7)
                 if event.key == pygame.K_9 and not (pygame.key.get_mods() & pygame.KMOD_LCTRL):
                     Inventory(8, True)
+                    if len(inventory) < 9:
+                        choose_weapon()
+                    else:
+                        choose_weapon(8)
                 if event.key == pygame.K_0 and not (pygame.key.get_mods() & pygame.KMOD_LCTRL):
                     Inventory(9, True)
+                    if len(inventory) < 10:
+                        choose_weapon()
+                    else:
+                        choose_weapon(9)
                 if event.key == pygame.K_1 and pygame.key.get_mods() & pygame.KMOD_LCTRL:
                     Inventory(10, True)
+                    if len(inventory) < 11:
+                        choose_weapon()
+                    else:
+                        choose_weapon(10)
                 if event.key == pygame.K_2 and pygame.key.get_mods() & pygame.KMOD_LCTRL:
                     Inventory(11, True)
+                    if len(inventory) < 12:
+                        choose_weapon()
+                    else:
+                        choose_weapon(11)
                 if event.key == pygame.K_3 and pygame.key.get_mods() & pygame.KMOD_LCTRL:
                     Inventory(12, True)
+                    if len(inventory) < 13:
+                        choose_weapon()
+                    else:
+                        choose_weapon(12)
                 if event.key == pygame.K_4 and pygame.key.get_mods() & pygame.KMOD_LCTRL:
                     Inventory(13, True)
+                    if len(inventory) < 14:
+                        choose_weapon()
+                    else:
+                        choose_weapon(13)
                 if event.key == pygame.K_5 and pygame.key.get_mods() & pygame.KMOD_LCTRL:
                     Inventory(14, True)
+                    if len(inventory) < 15:
+                        choose_weapon()
+                    else:
+                        choose_weapon(14)
             elif event.type == pygame.KEYUP:
                 if event.key == pygame.K_a:
                     x += v
