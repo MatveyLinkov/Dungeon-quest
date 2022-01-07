@@ -174,7 +174,7 @@ if __name__ == '__main__':
     camera = Camera()
     x, y = 0, 0
     player_v = 3
-    shot_v = 5
+    shot_v = 7
 
     moving = False
     flip = False
