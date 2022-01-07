@@ -35,7 +35,7 @@ def load_image(name, colorkey=None):
 
 player_sheet = pygame.transform.scale(load_image('knight_sheet.png'), (368, 96))
 slime_sheet = load_image('slime_idle_spritesheet.png')
-floor = [15, 21, 22, 23, 24, 30, 31, 32, 33]
+floor = [6, 15, 21, 22, 23, 24, 30, 31, 32, 33]
 ts = tile_width = tile_height = 48
 player = None
 
@@ -178,7 +178,7 @@ class Table(pygame.sprite.Sprite):
             touch += 1
             player_group.update(x, y, flip, True)
         if (dungeon.get_tile_id((self.rect.x // ts, self.rect.y // ts), 0) not in floor or
-            dungeon.get_tile_id((self.rect.x // ts, self.rect.y // ts), 1) == floor[0])\
+            dungeon.get_tile_id((self.rect.x // ts, self.rect.y // ts), 1) in floor[:1])\
                 and touch >= 1:
             self.rect.x -= x
             self.rect.y -= y
