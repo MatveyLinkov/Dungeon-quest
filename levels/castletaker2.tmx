@@ -1,17 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="9" height="8" tilewidth="48" tileheight="48" infinite="0" nextlayerid="7" nextobjectid="2">
- <tileset firstgid="1" source="../../maps/full tilemap копия.tsx"/>
- <layer id="1" name="Слой тайлов 1" width="9" height="8">
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="9" height="9" tilewidth="48" tileheight="48" infinite="0" nextlayerid="5" nextobjectid="11">
+ <tileset firstgid="1" source="../data/castle_tileset.tsx"/>
+ <layer id="1" name="Слой тайлов 1" width="9" height="9">
   <data encoding="base64" compression="zlib">
-   eJxjYCAPKACxKBZxkJg4EIsBsTwQK2JRA5MXxWOGHAH7JaDmyEHdogjlo9sjAXWHGFSdPBZ1+AAATqsCoQ==
+   eJxtjsEKgCAQRIW+IfSkeVYvkd4L+v9faqQnCLXwcJmdHdeYt64f5rrFIZKovE2ceHdRRBCrcMKKBV8ho+9G9D73YoPGH5b9jN8xt+RktECfmAf0SlacPI27hq9N+sjI7HhyivnWuGnc2j0Pw/kLwg==
   </data>
  </layer>
- <layer id="6" name="Слой тайлов 2" width="9" height="8">
+ <layer id="2" name="Слой тайлов 2" width="9" height="9">
   <data encoding="base64" compression="zlib">
-   eJxjYIAASyh2BWIdIDYFYkMGBDACYmYg1obSMICsxhWJzYRFjSuSXiYk2gyIHaF8bSR9plC+LhLbEcoGAX4ktTA2zI1maOLIatmgZpogqTWFimkjiYPEANjJBzA=
+   eJxjYBj8gB8J0xqwkaEHAB3oADQ=
   </data>
  </layer>
- <objectgroup id="4" name="Слой объектов 1">
-  <object id="1" name="Player" x="290" y="48" width="44" height="48"/>
+ <layer id="4" name="Слой тайлов 3" width="9" height="9">
+  <data encoding="base64" compression="zlib">
+   eJxjYKAv4KOzffQAAAzcAA8=
+  </data>
+ </layer>
+ <objectgroup id="3" name="Слой объектов 1">
+  <object id="1" name="1" type="slime" x="120" y="170"/>
+  <object id="2" name="2" type="slime" x="313" y="314"/>
+  <object id="3" name="3" type="slime" x="360" y="360"/>
+  <object id="4" name="Player" type="player" x="73" y="309"/>
+  <object id="5" name="1" type="spike" x="121" y="209.5"/>
+  <object id="6" name="2" type="spike" x="214" y="169.5"/>
+  <object id="7" name="3" type="spike" x="262.5" y="169.5"/>
+  <object id="8" name="4" type="spike" x="268.5" y="215"/>
+  <object id="9" name="5" type="spike" x="309.5" y="215"/>
+  <object id="10" name="6" type="spike" x="310" y="256.5"/>
  </objectgroup>
 </map>

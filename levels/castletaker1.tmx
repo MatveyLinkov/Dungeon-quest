@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="9" height="8" tilewidth="48" tileheight="48" infinite="0" nextlayerid="7" nextobjectid="9">
- <tileset firstgid="1" source="../../data/castle_tileset.tsx"/>
+ <tileset firstgid="1" source="../data/castle_tileset.tsx"/>
  <layer id="1" name="Слой тайлов 1" width="9" height="8">
   <data encoding="base64" compression="zlib">
    eJxdjkEKgCAURIXOoLnKWqeLItsXeP8rNdKTwg8PmXEcvzHv3FDEKVaxmW92EUUSWczCdpmCNwonglh+mdbd7i3UzotMwpv4J7FL5u3F6emZ2GVBD2Qz2rOHIxfwY9d9/LyIrv4Dn18KMA==
