@@ -36,6 +36,7 @@ def load_image(name, colorkey=None):
 
 
 player_sheet = pygame.transform.scale(load_image('knight_sheet.png'), (552, 150))
+skull_sheet = load_image('skull_sheet.png')
 walls = []
 doors = [37, 38, 39, 40, 47, 48, 49, 50, 57, 58, 59, 60, 67, 68]
 ts = tile_width = tile_height = 48
@@ -61,6 +62,8 @@ class Dungeon:
         for obj in self.map.objects:
             if obj.type == 'player':
                 self.player_x, self.player_y = obj.x // ts, obj.y // ts
+            elif obj.type == 'skull':
+                Skull(4, 1, obj.x // ts, obj.y // ts, )
 
     def render(self):
         for i in range(3):
@@ -70,7 +73,10 @@ class Dungeon:
                     if image:
                         if i == 1 and self.get_tile_id((x, y), i) not in walls:
                             walls.append(self.get_tile_id((x, y), i))
-                        Tile(self.get_tile_id((x, y), i), x, y, image)
+                        if self.get_tile_id((x, y), i) in doors:
+                            Door(x, y, image)
+                        else:
+                            Tile(self.get_tile_id((x, y), i), x, y, image)
         return self.player_x, self.player_y
 
     def get_tile_id(self, position, layer):
@@ -82,15 +88,23 @@ class Tile(pygame.sprite.Sprite):
         super().__init__(tiles_group, all_sprites)
         if tile_id in walls:
             self.add(walls_group)
-            if tile_id in doors:
-                self.add(doors_group)
         self.image = image
         self.rect = self.image.get_rect()
         self.rect = self.rect.move(tile_width * pos_x, tile_height * pos_y)
 
-    def update(self):
-        if self in doors_group:
-            self.kill()
+
+class Door(pygame.sprite.Sprite):
+    def __init__(self, pos_x, pos_y, image):
+        super().__init__(doors_group, walls_group, all_sprites)
+        self.image = image
+        self.rect = self.image.get_rect()
+        self.rect = self.rect.move(tile_width * pos_x, tile_height * pos_y)
+
+    def update(self, close):
+        if not close:
+            self.remove(walls_group)
+        else:
+            self.add(walls_group)
 
 
 class Player(pygame.sprite.Sprite):
@@ -142,9 +156,35 @@ class Shot(pygame.sprite.Sprite):
 
     def update(self, damage):
         self.rect = self.rect.move(self.vx, self.vy)
-        if pygame.sprite.spritecollideany(self, enemy_group) and damage or \
+        if pygame.sprite.spritecollideany(self, enemy_group) or \
                 pygame.sprite.spritecollideany(self, walls_group):
             self.kill()
+
+
+class Skull(pygame.sprite.Sprite):
+    def __init__(self, columns, rows, pos_x, pos_y):
+        super().__init__(enemy_group, all_sprites)
+        self.frames = []
+        self.crop_sheet(skull_sheet, columns, rows)
+        self.cur_frame = 0
+        self.image = self.frames[self.cur_frame]
+        self.rect = self.image.get_rect()
+        self.rect = self.rect.move(tile_width * pos_x + 12, tile_height * pos_y + 12)
+        self.mask = pygame.mask.from_surface(self.image)
+        self.clock = pygame.time.Clock()
+
+    def crop_sheet(self, sheet, columns, rows):
+        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
+                                sheet.get_height() // rows)
+        for i in range(rows):
+            for j in range(columns):
+                frame_coord = (self.rect.w * j, self.rect.h * i)
+                [self.frames.append(sheet.subsurface(pygame.Rect(frame_coord, self.rect.size)))
+                 for i in range(15)]
+
+    def update(self):
+        self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+        self.image = self.frames[self.cur_frame]
 
 
 class Camera:
@@ -162,7 +202,7 @@ class Camera:
 
 
 if __name__ == '__main__':
-    pygame.display.set_caption('Dungeon Quest: feature')
+    pygame.display.set_caption('Dungeon Quest: alpha')
 
     dungeon = Dungeon('dungeon_map1.tmx')
     clock = pygame.time.Clock()
@@ -178,6 +218,7 @@ if __name__ == '__main__':
 
     moving = False
     flip = False
+    doors_close = True
     running = True
     while running:
         screen.fill(pygame.Color((42, 22, 30)))
@@ -206,7 +247,8 @@ if __name__ == '__main__':
                 elif event.key == pygame.K_DOWN:
                     shot = Shot(player.rect.x + 27, player.rect.y + 75, 10, 0, shot_v)
                 elif event.key == pygame.K_f:
-                    tiles_group.update()
+                    tiles_group.update(doors_close)
+                    doors_close = not doors_close
 
             elif event.type == pygame.KEYUP:
                 if event.key == pygame.K_a:
@@ -224,11 +266,16 @@ if __name__ == '__main__':
         player.rect.y += y
         player.update(x, y, flip)
         shot_group.update(False)
+        doors_group.update(doors_close)
         camera.update(player)
+        enemy_group.update()
         for sprite in all_sprites:
             camera.apply(sprite)
 
         tiles_group.draw(screen)
+        if doors_close:
+            doors_group.draw(screen)
+        enemy_group.draw(screen)
         player_group.draw(screen)
         shot_group.draw(screen)
         clock.tick(FPS)
