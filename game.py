@@ -156,8 +156,8 @@ class Shot(pygame.sprite.Sprite):
 
     def update(self, damage):
         self.rect = self.rect.move(self.vx, self.vy)
-        if pygame.sprite.spritecollideany(self, enemy_group) or \
-                pygame.sprite.spritecollideany(self, walls_group):
+        if pygame.sprite.spritecollideany(self, walls_group) or\
+                (pygame.sprite.spritecollideany(self, enemy_group) and damage):
             self.kill()
 
 
@@ -172,6 +172,10 @@ class Skull(pygame.sprite.Sprite):
         self.rect = self.rect.move(tile_width * pos_x + 12, tile_height * pos_y + 12)
         self.mask = pygame.mask.from_surface(self.image)
         self.clock = pygame.time.Clock()
+        self.hp = 10
+        self.moving = False
+        self.move_x, self.move_y = 0, 0
+        self.flip = False
 
     def crop_sheet(self, sheet, columns, rows):
         self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
@@ -185,6 +189,38 @@ class Skull(pygame.sprite.Sprite):
     def update(self):
         self.cur_frame = (self.cur_frame + 1) % len(self.frames)
         self.image = self.frames[self.cur_frame]
+        if (self.rect.x // ts == player.rect.x // ts or
+           self.rect.x // ts == (player.rect.x + player.rect.width) // ts) and not self.moving:
+            if self.rect.y < player.rect.y:
+                self.move_y = 4
+            else:
+                self.move_y = -4
+            self.moving = True
+        elif (self.rect.y // ts == player.rect.y // ts or
+              self.rect.y // ts == (player.rect.y + player.rect.height) // ts) and not self.moving:
+            if self.rect.x < player.rect.x:
+                self.move_x = 4
+                self.flip = False
+            else:
+                self.move_x = -4
+                self.flip = True
+            self.moving = True
+        if self.flip:
+            self.image = pygame.transform.flip(self.image, True, False)
+        if not pygame.sprite.spritecollideany(self, walls_group):
+            if self.moving:
+                self.rect.x += self.move_x
+                self.rect.y += self.move_y
+        else:
+            self.rect.x -= self.move_x
+            self.rect.y -= self.move_y
+            self.move_x, self.move_y = 0, 0
+            self.moving = False
+        if pygame.sprite.spritecollideany(self, shot_group):
+            self.hp -= 1
+            shot_group.update(True)
+            if self.hp == 0:
+                self.kill()
 
 
 class Camera:
@@ -214,7 +250,7 @@ if __name__ == '__main__':
     camera = Camera()
     x, y = 0, 0
     player_v = 3
-    shot_v = 7
+    shot_v = 8
 
     moving = False
     flip = False
@@ -249,6 +285,11 @@ if __name__ == '__main__':
                 elif event.key == pygame.K_f:
                     tiles_group.update(doors_close)
                     doors_close = not doors_close
+                elif event.key == pygame.K_r:
+                    [s.kill() for s in all_sprites]
+                    dungeon = Dungeon('dungeon_map1.tmx')
+                    player_x, player_y = dungeon.render()
+                    player = Player(8, 2, player_x, player_y)
 
             elif event.type == pygame.KEYUP:
                 if event.key == pygame.K_a:
