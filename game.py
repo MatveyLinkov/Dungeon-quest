@@ -1,34 +1,22 @@
 import os
 import sys
 import pygame
-import random
+import pytmx
+import numpy as np
 
+print('Нажмите F для уничтожения всех дверей')
 pygame.init()
-#  pygame.joystick.init()
-#  js = pygame.joystick.Joystick(0)
-#  js.init()
-size = width, height = 750, 500
+size = width, height = 1280, 720
+FPS = 120
+MAPS_DIR = 'levels'
 screen = pygame.display.set_mode(size)
 all_sprites = pygame.sprite.Group()
-inventory_group = pygame.sprite.Group()
-weapon_group = pygame.sprite.Group()
 tiles_group = pygame.sprite.Group()
 walls_group = pygame.sprite.Group()
-rocks_group = pygame.sprite.Group()
+doors_group = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
-enemy_group = pygame.sprite.Group()
 shot_group = pygame.sprite.Group()
-chest_group = pygame.sprite.Group()
-melee_group = pygame.sprite.Group()
-current_weapon = 'silver_sword'
-
-
-def load_level(filename):
-    filename = 'levels/' + filename
-    with open(filename, 'r', encoding='utf-8') as mapfile:
-        level_map = [line.strip() for line in mapfile.readlines()]
-    max_width = max([len(x) for x in level_map])
-    return list(map(lambda x: x.ljust(max_width, '.'), level_map))
+enemy_group = pygame.sprite.Group()
 
 
 def load_image(name, colorkey=None):
@@ -47,41 +35,12 @@ def load_image(name, colorkey=None):
     return image
 
 
-cell_image = pygame.transform.scale(load_image('inventory_cell.png'), (50, 50))
-choose_cell = pygame.transform.scale(load_image('inventory_cell1.png'), (50, 50))
-cells = [False, False, False, False, False, False, False, False, False, False,
-         False, False, False, False, True]
-weapons = {
-    'silver_sword': pygame.transform.scale(load_image('silver_sword.png'), (30, 30)),
-    'diamond_sword': pygame.transform.scale(load_image('diamond_sword.png'), (30, 30)),
-    'default_blaster': pygame.transform.scale(load_image('default_blaster.png'), (30, 30))
-}
-all_weapons = ['diamond_sword', 'silver_sword', 'default_blaster']
-swords = ['diamond_sword', 'silver_sword']
-guns = ['default_blaster']
-tile_images = {
-    'wall_1': pygame.transform.scale(load_image('wall_1.png'), (50, 50)),
-    'wall_2': pygame.transform.scale(load_image('wall_2.png'), (50, 50)),
-    'wall_3': pygame.transform.scale(load_image('wall_3.png'), (50, 50)),
-    'wall_4': pygame.transform.scale(load_image('wall_4.png'), (50, 50)),
-    'wall_5': pygame.transform.scale(load_image('wall_5.png'), (50, 50)),
-    'wall_6': pygame.transform.scale(load_image('wall_6.png'), (50, 50)),
-    'wall_7': pygame.transform.scale(load_image('wall_7.png'), (50, 50)),
-    'wall_8': pygame.transform.scale(load_image('wall_8.png'), (50, 50)),
-    'empty': pygame.transform.scale(load_image('tile_2.png'), (50, 50)),
-    'empty_1': pygame.transform.scale(load_image('tile_1.png'), (50, 50)),
-    'empty_2': pygame.transform.scale(load_image('tile_3.png'), (50, 50))
-}
-player_image = pygame.transform.scale(load_image('creature-1.png'), (40, 40))
-dummy_image = load_image('dummy.png')
-rock_image = pygame.transform.scale(load_image('rock.png'), (50, 50))
-rock_break_image = pygame.transform.scale(load_image('rock_break.png'), (50, 50))
-#  closed_chest_image = pygame.transform.scale(load_image('closed_chest.png'), (50, 50))
-#  opened_chest_image = pygame.transform.scale(load_image('opened_chest.png'), (50, 50))
-chest_image = pygame.transform.scale(load_image('chest.png'), (50, 50))
-tile_width = tile_height = 50
+player_sheet = pygame.transform.scale(load_image('knight_sheet.png'), (552, 150))
+skull_sheet = load_image('skull_sheet.png')
+walls = []
+doors = [37, 38, 39, 40, 47, 48, 49, 50, 57, 58, 59, 60, 67, 68]
+ts = tile_width = tile_height = 48
 player = None
-dummy = None
 
 
 def terminate():
@@ -93,160 +52,139 @@ def start_screen():
     pass
 
 
-class Inventory(pygame.sprite.Sprite):
-    def __init__(self, pos_x, choose=False, weapon=None):
-        super().__init__(inventory_group, all_sprites)
-        if choose:
-            self.image = choose_cell
-            Inventory(cells.index(True))
-            cells[cells.index(True)], cells[pos_x] = False, True
-        else:
-            self.image = cell_image
-        self.rect = self.image.get_rect()
-        self.rect = self.rect.move(pos_x * tile_width, 0)
+class Dungeon:
+    def __init__(self, filename):
+        super().__init__()
+        self.map = pytmx.load_pygame(f'{MAPS_DIR}/{filename}')
+        self.height = self.map.height
+        self.width = self.map.width
+        self.tile_size = self.map.tilewidth
+        for obj in self.map.objects:
+            if obj.type == 'player':
+                self.player_x, self.player_y = obj.x // ts, obj.y // ts
+            elif obj.type == 'skull':
+                Skull(4, 1, obj.x // ts, obj.y // ts, )
 
+    def render(self):
+        for i in range(3):
+            for y in range(self.height):
+                for x in range(self.width):
+                    image = self.map.get_tile_image(x, y, i)
+                    if image:
+                        if i == 1 and self.get_tile_id((x, y), i) not in walls:
+                            walls.append(self.get_tile_id((x, y), i))
+                        if self.get_tile_id((x, y), i) in doors:
+                            Door(x, y, image)
+                        else:
+                            Tile(self.get_tile_id((x, y), i), x, y, image)
+        return self.player_x, self.player_y
 
-class WeaponInventory(pygame.sprite.Sprite):
-    def __init__(self, pos_x, weapon):
-        super().__init__(weapon_group, all_sprites)
-        self.image = weapon
-        self.rect = self.image.get_rect()
-        self.rect = self.rect.move(10 + pos_x * tile_width, 10)
+    def get_tile_id(self, position, layer):
+        return self.map.tiledgidmap[self.map.get_tile_gid(*position, layer)]
 
 
 class Tile(pygame.sprite.Sprite):
-    def __init__(self, tile_type, pos_x, pos_y):
+    def __init__(self, tile_id, pos_x, pos_y, image):
         super().__init__(tiles_group, all_sprites)
-        if 'wall' in tile_type:
+        if tile_id in walls:
             self.add(walls_group)
-        self.image = tile_images[tile_type]
+        self.image = image
         self.rect = self.image.get_rect()
-        self.rect = self.rect.move(tile_width * pos_x, tile_height * pos_y + 50)
+        self.rect = self.rect.move(tile_width * pos_x, tile_height * pos_y)
 
 
-class Rock(pygame.sprite.Sprite):
-    def __init__(self, pos_x, pos_y):
-        super().__init__(rocks_group, all_sprites)
-        self.image = rock_image
+class Door(pygame.sprite.Sprite):
+    def __init__(self, pos_x, pos_y, image):
+        super().__init__(doors_group, walls_group, all_sprites)
+        self.image = image
         self.rect = self.image.get_rect()
-        self.rect = self.rect.move(tile_width * pos_x, tile_height * pos_y + 50)
-        self.hp = 10
+        self.rect = self.rect.move(tile_width * pos_x, tile_height * pos_y)
 
-    def update(self, weapon='silver_sword'):
-        if pygame.sprite.spritecollideany(self, shot_group):
-            if weapon == 'default_blaster':
-                self.hp -= 1
-            shot_group.update(True)
-            if self.hp <= 0:
-                self.kill()
-            if self.hp <= 5:
-                self.image = rock_break_image
-        elif pygame.sprite.spritecollideany(self, melee_group):
-            if weapon == 'silver_sword':
-                self.hp -= 1
-            if weapon == 'diamond_sword':
-                self.hp -= 3
-            if self.hp <= 0:
-                self.kill()
-            if self.hp <= 5:
-                self.image = rock_break_image
+    def update(self, close):
+        if not close:
+            self.remove(walls_group)
+        else:
+            self.add(walls_group)
 
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, pos_x, pos_y):
+    def __init__(self, columns, rows, pos_x, pos_y):
         super().__init__(player_group, all_sprites)
-        self.image = player_image
+        self.frames = []
+        self.half_frames = 48
+        self.crop_sheet(player_sheet, columns, rows)
+        self.cur_frame = 0
+        self.image = self.frames[self.cur_frame]
         self.rect = self.image.get_rect()
-        self.rect = self.rect.move(tile_width * pos_x + 5, tile_height * pos_y + 5)
+        self.rect = self.rect.move(tile_width * pos_x + 12, tile_height * pos_y + 12)
+        self.mask = pygame.mask.from_surface(self.image)
+        self.clock = pygame.time.Clock()
 
-    def update(self, x, y):
-        if pygame.sprite.spritecollideany(self, walls_group) or\
-                pygame.sprite.spritecollideany(self, rocks_group):
-            self.rect.x -= x
-            self.rect.y -= y
+    def crop_sheet(self, sheet, columns, rows):
+        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
+                                sheet.get_height() // rows)
+        for i in range(rows):
+            for j in range(columns):
+                frame_coord = (self.rect.w * j, self.rect.h * i)
+                [self.frames.append(sheet.subsurface(pygame.Rect(frame_coord, self.rect.size)))
+                 for i in range(6)]
 
-
-class Enemy(pygame.sprite.Sprite):
-    def __init__(self, pos_x, pos_y):
-        super().__init__(enemy_group, all_sprites)
-        self.image = dummy_image
-        self.rect = self.image.get_rect()
-        self.rect = self.rect.move(tile_width * pos_x + 10, tile_height * pos_y + 55)
-        self.hp = 3
-
-    def update(self, weapon='silver_sword'):
-        if pygame.sprite.spritecollideany(self, shot_group):
-            if weapon == 'default_blaster':
-                self.hp -= 1
-            shot_group.update(True)
-            if self.hp <= 0:
-                self.kill()
-        elif pygame.sprite.spritecollideany(self, melee_group):
-            if weapon == 'silver_sword':
-                self.hp -= 1
-            if weapon == 'diamond_sword':
-                self.hp -= 3
-            if self.hp <= 0:
-                self.kill()
-
-
-class Chest(pygame.sprite.Sprite):
-    def __init__(self, pos_x, pos_y):
-        super().__init__(chest_group, all_sprites)
-        self.image = chest_image
-        self.rect = self.image.get_rect()
-        self.rect = self.rect.move(tile_width * pos_x, tile_height * pos_y + 55)
-
-    def update(self, button):
-        if pygame.sprite.spritecollideany(self, player_group):
-            if button == 'e':
-                getting_weapon()
-                self.kill()
-            if button is None:
-                pass
-
-
-def getting_weapon():
-    global current_weapon
-    current_weapon = random.choice(all_weapons)
-
-
-class Melee(pygame.sprite.Sprite):
-    def __init__(self, x, y, weapon, way):
-        super().__init__(melee_group)
-        self.image = weapons[weapon]
-        if way == 'up':
-            self.image = pygame.transform.rotate(self.image, 45)
-        elif way == 'down':
-            self.image = pygame.transform.rotate(self.image, -135)
-        elif way == 'left':
-            self.image = pygame.transform.rotate(self.image, 135)
-        elif way == 'right':
-            self.image = pygame.transform.rotate(self.image, -45)
-        self.weapon = weapon
-        self.way = way
-        self.rect = self.image.get_rect()
-        self.rect.x, self.rect.y = x - 15, y - 10
-
-    def update(self):
-        self.kill()
+    def update(self, x, y, flip):
+        if moving:
+            self.cur_frame = (self.cur_frame + 1) % len(self.frames[self.half_frames:])
+            self.image = self.frames[self.half_frames:][self.cur_frame]
+        else:
+            self.cur_frame = (self.cur_frame + 1) % len(self.frames[:self.half_frames])
+            self.image = self.frames[:self.half_frames][self.cur_frame]
+        if flip:
+            self.image = pygame.transform.flip(self.image, True, False)
+        if pygame.sprite.spritecollideany(self, walls_group):
+            if len(list(filter(lambda s: pygame.sprite.collide_mask(self, s),
+                               np.array(list(walls_group))))) >= 1:
+                self.rect.x -= x
+                self.rect.y -= y
 
 
 class Shot(pygame.sprite.Sprite):
     def __init__(self, x, y, radius, vx, vy):
-        super().__init__(shot_group)
+        super().__init__(shot_group, all_sprites)
         self.radius = radius
         self.image = pygame.Surface((2 * radius, 2 * radius), pygame.SRCALPHA, 32)
-        pygame.draw.circle(self.image, pygame.Color('red'), (radius, radius), radius)
+        pygame.draw.circle(self.image, pygame.Color((255, 45, 190)), (radius, radius), radius)
         self.rect = pygame.Rect(x, y, 2 * radius, 2 * radius)
         self.vx, self.vy = vx, vy
 
     def update(self, damage):
         self.rect = self.rect.move(self.vx, self.vy)
-        if pygame.sprite.spritecollideany(self, enemy_group) and damage or \
-                pygame.sprite.spritecollideany(self, walls_group) or \
-                pygame.sprite.spritecollideany(self, rocks_group) and damage:
+        if pygame.sprite.spritecollideany(self, enemy_group) or \
+                pygame.sprite.spritecollideany(self, walls_group):
             self.kill()
+
+
+class Skull(pygame.sprite.Sprite):
+    def __init__(self, columns, rows, pos_x, pos_y):
+        super().__init__(enemy_group, all_sprites)
+        self.frames = []
+        self.crop_sheet(skull_sheet, columns, rows)
+        self.cur_frame = 0
+        self.image = self.frames[self.cur_frame]
+        self.rect = self.image.get_rect()
+        self.rect = self.rect.move(tile_width * pos_x + 12, tile_height * pos_y + 12)
+        self.mask = pygame.mask.from_surface(self.image)
+        self.clock = pygame.time.Clock()
+
+    def crop_sheet(self, sheet, columns, rows):
+        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
+                                sheet.get_height() // rows)
+        for i in range(rows):
+            for j in range(columns):
+                frame_coord = (self.rect.w * j, self.rect.h * i)
+                [self.frames.append(sheet.subsurface(pygame.Rect(frame_coord, self.rect.size)))
+                 for i in range(15)]
+
+    def update(self):
+        self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+        self.image = self.frames[self.cur_frame]
 
 
 class Camera:
@@ -263,126 +201,83 @@ class Camera:
         self.dy = height // 2 - target.rect.y - target.rect.h // 2
 
 
-def generate_level(level):
-    new_player, x, y = None, None, None
-    Inventory(0, True)
-    WeaponInventory(0, weapons['silver_sword'])
-    for i in range(1, 15):
-        Inventory(i)
-    for y in range(len(level)):
-        for x in range(len(level[y])):
-            if level[y][x] == '.':
-                Tile(random.choice(('empty', 'empty_1', 'empty_2')), x, y)
-            elif level[y][x] == '#':
-                if (x, y) == (0, 0):
-                    Tile('wall_1', x, y)
-                elif len(level[y]) - 1 > x > 0 and y == 0:
-                    Tile('wall_2', x, y)
-                elif (x, y) == (len(level[y]) - 1, 0):
-                    Tile('wall_3', x, y)
-                elif x == 0 and len(level) - 1 > y > 0:
-                    Tile('wall_4', x, y)
-                elif x == len(level[y]) - 1 and len(level) - 1 > y > 0:
-                    Tile('wall_5', x, y)
-                elif (x, y) == (0, len(level) - 1):
-                    Tile('wall_6', x, y)
-                elif len(level[y]) - 1 > x > 0 and y == len(level) - 1:
-                    Tile('wall_7', x, y)
-                elif (x, y) == (len(level[y]) - 1, len(level) - 1):
-                    Tile('wall_8', x, y)
-            elif level[y][x] == '@':
-                Tile('empty', x, y)
-                new_player = Player(x, y)
-            elif level[y][x] == '&':
-                Tile('empty', x, y)
-                Enemy(x, y)
-            elif level[y][x] == '*':
-                Tile('empty', x, y)
-                Rock(x, y)
-            elif level[y][x] == '?':
-                Tile('empty', x, y)
-                Chest(x, y)
-    return new_player, x, y
-
-
 if __name__ == '__main__':
-    pygame.display.set_caption('Dungeon Quest: demo')
+    pygame.display.set_caption('Dungeon Quest: alpha')
+
+    dungeon = Dungeon('dungeon_map1.tmx')
     clock = pygame.time.Clock()
-    start_screen()
-    player, level_x, level_y = generate_level(load_level('demo.txt'))
+    pygame.mouse.set_visible(False)
+
+    player_x, player_y = dungeon.render()
+    player = Player(8, 2, player_x, player_y)
+
+    camera = Camera()
     x, y = 0, 0
-    v = 1
-    button = None
+    player_v = 3
+    shot_v = 7
+
+    moving = False
+    flip = False
+    doors_close = True
     running = True
     while running:
-        screen.fill(pygame.Color('black'))
+        screen.fill(pygame.Color((42, 22, 30)))
+        moving = False
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                if 0 <= event.pos[1] <= 50 and event.pos[0] // 50 != cells.index(True):
-                    Inventory(event.pos[0] // 50, True)
+
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_a:
-                    x -= v
+                    x -= player_v
+                    flip = True
                 elif event.key == pygame.K_w:
-                    y -= v
+                    y -= player_v
                 elif event.key == pygame.K_d:
-                    x += v
+                    x += player_v
+                    flip = False
                 elif event.key == pygame.K_s:
-                    y += v
+                    y += player_v
                 if event.key == pygame.K_LEFT:
-                    if current_weapon in guns:
-                        shot = Shot(player.rect.x - 14, player.rect.y + 14, 7, -2, 0)
-                    elif current_weapon in swords:
-                        melee = Melee(player.rect.x - 14, player.rect.y + 14, current_weapon,
-                                      'left')
+                    shot = Shot(player.rect.x - 20, player.rect.y + 27, 10, -shot_v, 0)
                 elif event.key == pygame.K_RIGHT:
-                    if current_weapon in guns:
-                        shot = Shot(player.rect.x + 40, player.rect.y + 14, 7, 2, 0)
-                    elif current_weapon in swords:
-                        melee = Melee(player.rect.x + 40, player.rect.y + 14, current_weapon,
-                                      'right')
+                    shot = Shot(player.rect.x + 69, player.rect.y + 27, 10, shot_v, 0)
                 elif event.key == pygame.K_UP:
-                    if current_weapon in guns:
-                        shot = Shot(player.rect.x + 14, player.rect.y - 14, 7, 0, -2)
-                    elif current_weapon in swords:
-                        melee = Melee(player.rect.x + 14, player.rect.y - 14, current_weapon, 'up')
+                    shot = Shot(player.rect.x + 27, player.rect.y - 17, 10, 0, -shot_v)
                 elif event.key == pygame.K_DOWN:
-                    if current_weapon in guns:
-                        shot = Shot(player.rect.x + 14, player.rect.y + 40, 7, 0, 2)
-                    elif current_weapon in swords:
-                        melee = Melee(player.rect.x + 14, player.rect.y + 40, current_weapon,
-                                      'down')
-                if event.key == pygame.K_e:
-                    button = 'e'
+                    shot = Shot(player.rect.x + 27, player.rect.y + 75, 10, 0, shot_v)
+                elif event.key == pygame.K_f:
+                    tiles_group.update(doors_close)
+                    doors_close = not doors_close
+
             elif event.type == pygame.KEYUP:
                 if event.key == pygame.K_a:
-                    x += v
+                    x += player_v
                 elif event.key == pygame.K_w:
-                    y += v
+                    y += player_v
                 elif event.key == pygame.K_d:
-                    x -= v
+                    x -= player_v
                 elif event.key == pygame.K_s:
-                    y -= v
+                    y -= player_v
+        if (x, y) != (0, 0):
+            moving = True
+
         player.rect.x += x
         player.rect.y += y
-        player.update(x, y)
-        chest_group.update(button)
-        button = None
-        rocks_group.update(current_weapon)
-        enemy_group.update(current_weapon)
+        player.update(x, y, flip)
         shot_group.update(False)
-        melee_group.update()
-        inventory_group.draw(screen)
-        weapon_group.draw(screen)
+        doors_group.update(doors_close)
+        camera.update(player)
+        enemy_group.update()
+        for sprite in all_sprites:
+            camera.apply(sprite)
+
         tiles_group.draw(screen)
-        chest_group.draw(screen)
+        if doors_close:
+            doors_group.draw(screen)
         enemy_group.draw(screen)
         player_group.draw(screen)
         shot_group.draw(screen)
-        rocks_group.draw(screen)
-        melee_group.draw(screen)
-        clock.tick(200)
+        clock.tick(FPS)
         pygame.display.flip()
     pygame.quit()
