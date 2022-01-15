@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="93" height="93" tilewidth="48" tileheight="48" infinite="0" nextlayerid="7" nextobjectid="19">
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="93" height="93" tilewidth="48" tileheight="48" infinite="0" nextlayerid="7" nextobjectid="23">
  <tileset firstgid="1" source="../data/dungeon_tileset1.tsx"/>
  <tileset firstgid="101" source="../data/castle_tileset.tsx"/>
  <layer id="1" name="Слой тайлов 1" width="93" height="93">
@@ -29,5 +29,9 @@
   <object id="16" name="0 2" type="script" x="3793.33" y="289.667" width="45.3333" height="237.833"/>
   <object id="17" name="1 1" type="script" x="2112.08" y="1971.02" width="239.25" height="46.9034"/>
   <object id="18" name="1 0" type="script" x="626.151" y="2112.3" width="43.6667" height="237"/>
+  <object id="19" name="2" type="room" x="49.3333" y="1869.33" width="717.333" height="724"/>
+  <object id="20" name="1" type="room" x="3697.5" y="48" width="717.5" height="721"/>
+  <object id="21" name="3" type="room" x="1875" y="1871" width="717" height="720"/>
+  <object id="22" name="0 2" type="script" x="3938.67" y="628" width="233.333" height="44"/>
  </objectgroup>
 </map>

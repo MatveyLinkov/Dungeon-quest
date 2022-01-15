@@ -4,7 +4,6 @@ import sys
 import pygame
 import pytmx
 
-print('Нажмите F для уничтожения всех дверей')
 pygame.init()
 size = width, height = 1280, 720
 FPS = 60
@@ -19,6 +18,7 @@ player_group = pygame.sprite.Group()
 shot_group = pygame.sprite.Group()
 enemy_group = pygame.sprite.Group()
 scripts_group = pygame.sprite.Group()
+rooms_group = pygame.sprite.Group()
 
 
 def load_image(name, colorkey=None):
@@ -71,6 +71,8 @@ class Dungeon:
                 Skull(4, 1, obj.x // ts, obj.y // ts, )
             elif obj.type == 'script':
                 Script(obj.x, obj.y, obj.width, obj.height)
+            elif obj.type == 'room':
+                Room(obj.x, obj.y, obj.width, obj.height)
 
     def render(self):
         for i in range(3):
@@ -153,6 +155,24 @@ class Script(pygame.sprite.Sprite):
             self.kill()
 
 
+class Room(pygame.sprite.Sprite):
+    def __init__(self, pos_x, pos_y, width, height):
+        super().__init__(scripts_group, all_sprites)
+        self.image = pygame.Surface((width, height))
+        self.rect = pygame.Rect(pos_x, pos_y, width, height)
+        self.fight = False
+
+    def update(self):
+        global doors_close
+        if pygame.sprite.spritecollideany(self, player_group):
+            if not pygame.sprite.spritecollideany(self, enemy_group):
+                doors_close = False
+            if not self.fight and doors_close:
+                [enemy.update(True) for enemy in enemy_group if
+                 pygame.sprite.collide_mask(self, enemy)]
+                self.fight = True
+
+
 class Player(pygame.sprite.Sprite):
     def __init__(self, columns, rows, pos_x, pos_y):
         super().__init__(player_group, all_sprites)
@@ -219,6 +239,7 @@ class Skull(pygame.sprite.Sprite):
         self.moving = False
         self.move_x, self.move_y = 0, 0
         self.flip = False
+        self.close = False
 
     def crop_sheet(self, sheet, columns, rows):
         self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
@@ -229,12 +250,14 @@ class Skull(pygame.sprite.Sprite):
                 [self.frames.append(sheet.subsurface(pygame.Rect(frame_coord, self.rect.size)))
                  for i in range(8)]
 
-    def update(self, close):
+    def update(self, close=False):
+        if close:
+            self.close = close
         self.cur_frame = (self.cur_frame + 1) % len(self.frames)
         self.image = self.frames[self.cur_frame]
         if len([self.rect.x + j for j in range(self.rect.width + 1) if self.rect.x + j in
                [player.rect.x + i for i in range(player.rect.width + 1)]]) >= 1\
-                and not self.moving and close:
+                and not self.moving and self.close:
             if self.rect.y < player.rect.y:
                 self.move_y = 8
             else:
@@ -242,7 +265,7 @@ class Skull(pygame.sprite.Sprite):
             self.moving = True
         elif len([self.rect.y + j for j in range(self.rect.height + 1) if self.rect.y + j in
                   [player.rect.y + i for i in range(player.rect.height + 1)]]) >= 1 \
-                and not self.moving and close:
+                and not self.moving and self.close:
             if self.rect.x < player.rect.x:
                 self.move_x = 8
                 self.flip = False
@@ -327,9 +350,6 @@ if __name__ == '__main__':
                     Shot(player.rect.x + 12, player.rect.y - 36, 0, -shot_v, 180)
                 elif event.key == pygame.K_DOWN:
                     Shot(player.rect.x + 12, player.rect.y + 69, 0, shot_v, 0)
-                elif event.key == pygame.K_f:
-                    doors_group.update(doors_close)
-                    doors_close = not doors_close
                 elif event.key == pygame.K_r:
                     [s.kill() for s in all_sprites]
                     dungeon = Dungeon('map01.tmx')
@@ -356,8 +376,9 @@ if __name__ == '__main__':
         doors_group.update(doors_close)
         camera.update(player)
         scripts_group.update()
+        rooms_group.update()
         animated_sprites_group.update()
-        enemy_group.update(doors_close)
+        enemy_group.update()
         for sprite in all_sprites:
             camera.apply(sprite)
 
