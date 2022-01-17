@@ -4,6 +4,7 @@ import sys
 import pygame
 import pytmx
 
+map_number = input('Введите номер карты (1, 2): ')
 pygame.init()
 size = width, height = 1280, 720
 FPS = 60
@@ -86,8 +87,11 @@ class Dungeon:
                             Door(x, y, image)
                         elif self.get_tile_id((x, y), i) in animated_sprites:
                             AnimatedSprite(self.get_tile_id((x, y), i), 4, 1, x, y)
+                        elif self.get_tile_id((x, y), i) - 100 in animated_sprites:
+                            AnimatedSprite(self.get_tile_id((x, y), i) - 100, 4, 1, x, y)
                         else:
                             Tile(self.get_tile_id((x, y), i), x, y, image)
+
         return self.player_x, self.player_y
 
     def get_tile_id(self, position, layer):
@@ -142,22 +146,9 @@ class Door(pygame.sprite.Sprite):
             self.add(walls_group)
 
 
-class Script(pygame.sprite.Sprite):
-    def __init__(self, pos_x, pos_y, width, height):
-        super().__init__(scripts_group, all_sprites)
-        self.image = pygame.Surface((240, 240))
-        self.rect = pygame.Rect(pos_x, pos_y, width, height)
-
-    def update(self):
-        global doors_close
-        if pygame.sprite.spritecollideany(self, player_group):
-            doors_close = True
-            self.kill()
-
-
 class Room(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y, width, height):
-        super().__init__(scripts_group, all_sprites)
+        super().__init__(rooms_group, all_sprites)
         self.image = pygame.Surface((width, height))
         self.rect = pygame.Rect(pos_x, pos_y, width, height)
         self.fight = False
@@ -171,6 +162,22 @@ class Room(pygame.sprite.Sprite):
                 [enemy.update(True) for enemy in enemy_group if
                  pygame.sprite.collide_mask(self, enemy)]
                 self.fight = True
+                for script in scripts_group:
+                    if pygame.sprite.collide_mask(self, script):
+                        script.update(self.fight)
+
+
+class Script(pygame.sprite.Sprite):
+    def __init__(self, pos_x, pos_y, width, height):
+        super().__init__(scripts_group, all_sprites)
+        self.image = pygame.Surface((240, 240))
+        self.rect = pygame.Rect(pos_x, pos_y, width, height)
+
+    def update(self, fight=False):
+        global doors_close
+        if pygame.sprite.spritecollideany(self, player_group) or fight:
+            doors_close = True
+            self.kill()
 
 
 class Player(pygame.sprite.Sprite):
@@ -308,7 +315,7 @@ class Camera:
 if __name__ == '__main__':
     pygame.display.set_caption('Dungeon Quest: alpha')
 
-    dungeon = Dungeon('map01.tmx')
+    dungeon = Dungeon(f'map0{map_number}.tmx')
     clock = pygame.time.Clock()
     pygame.mouse.set_visible(False)
 
@@ -350,7 +357,7 @@ if __name__ == '__main__':
                     Shot(player.rect.x + 12, player.rect.y + 69, 0, shot_v, 0)
                 elif event.key == pygame.K_r:
                     [s.kill() for s in all_sprites]
-                    dungeon = Dungeon('map01.tmx')
+                    dungeon = Dungeon(f'map0{map_number}.tmx')
                     player_x, player_y = dungeon.render()
                     player = Player(8, 2, player_x, player_y)
 
