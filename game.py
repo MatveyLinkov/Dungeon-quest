@@ -334,12 +334,10 @@ if __name__ == '__main__':
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_a:
                     x -= player_v
-                    flip = True
                 elif event.key == pygame.K_w:
                     y -= player_v
                 elif event.key == pygame.K_d:
                     x += player_v
-                    flip = False
                 elif event.key == pygame.K_s:
                     y += player_v
                 if event.key == pygame.K_LEFT:
@@ -367,6 +365,10 @@ if __name__ == '__main__':
                     y -= player_v
         if (x, y) != (0, 0):
             moving = True
+        if x < 0:
+            flip = True
+        elif x > 0:
+            flip = False
 
         player.rect.x += x
         player.rect.y += y
