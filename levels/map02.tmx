@@ -35,7 +35,7 @@
   <object id="15" name="1" type="script" x="2470.67" y="287.333" width="48.6667" height="240.667"/>
   <object id="16" name="1" type="script" x="2113.33" y="645.33" width="238.667" height="48"/>
   <object id="17" name="4" type="script" x="2475" y="2111" width="50" height="242"/>
-  <object id="18" name="4" type="script" x="2113.33" y="1940" width="240" height="51.3333"/>
+  <object id="18" name="4" type="script" x="2113.33" y="1945" width="240" height="51.3333"/>
   <object id="19" name="3" type="script" x="660" y="2112.67" width="48" height="240.667"/>
   <object id="20" name="Goblin" type="enemy" x="1968" y="2308" width="45" height="43"/>
   <object id="22" name="Goblin" type="enemy" x="2211" y="2450" width="43" height="45"/>

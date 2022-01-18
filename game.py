@@ -1,4 +1,5 @@
 import os
+import random
 import sys
 
 import pygame
@@ -21,6 +22,7 @@ shot_group = pygame.sprite.Group()
 enemy_group = pygame.sprite.Group()
 scripts_group = pygame.sprite.Group()
 rooms_group = pygame.sprite.Group()
+health_group = pygame.sprite.Group()
 
 
 def load_image(name, colorkey=None):
@@ -155,7 +157,7 @@ class Particle(pygame.sprite.Sprite):
             for j in range(columns):
                 frame_coord = (self.rect.w * j, self.rect.h * i)
                 [self.frames.append(sheet.subsurface(pygame.Rect(frame_coord, self.rect.size)))
-                 for i in range(8)]
+                 for i in range(6)]
 
     def update(self, close=False):
         self.cur_frame = (self.cur_frame + 1) % len(self.frames)
@@ -223,6 +225,9 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect = self.rect.move(tile_width * pos_x + 12, tile_height * pos_y + 12)
         self.mask = pygame.mask.from_surface(self.image)
+        self.damage = False
+        self.visible = True
+        self.time = 0
 
     def crop_sheet(self, sheet, columns, rows):
         self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
@@ -245,6 +250,8 @@ class Player(pygame.sprite.Sprite):
         if pygame.sprite.spritecollideany(self, walls_group):
             self.rect.x -= x
             self.rect.y -= y
+        if pygame.sprite.spritecollideany(self, enemy_group):
+            return True
 
 
 class Shot(pygame.sprite.Sprite):
@@ -274,8 +281,8 @@ class Skull(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect = self.rect.move(tile_width * pos_x + 12, tile_height * pos_y + 12)
         self.mask = pygame.mask.from_surface(self.image)
-        self.clock = pygame.time.Clock()
-        self.hp = 10
+        self.hp = 8
+        self.speed = 7
         self.moving = False
         self.move_x, self.move_y = 0, 0
         self.flip = False
@@ -299,18 +306,18 @@ class Skull(pygame.sprite.Sprite):
                [player.rect.x + i for i in range(player.rect.width + 1)]]) >= 1\
                 and not self.moving and self.close:
             if self.rect.y < player.rect.y:
-                self.move_y = 8
+                self.move_y = self.speed
             else:
-                self.move_y = -8
+                self.move_y = -self.speed
             self.moving = True
         elif len([self.rect.y + j for j in range(self.rect.height + 1) if self.rect.y + j in
                   [player.rect.y + i for i in range(player.rect.height + 1)]]) >= 1 \
                 and not self.moving and self.close:
             if self.rect.x < player.rect.x:
-                self.move_x = 8
+                self.move_x = self.speed
                 self.flip = False
             else:
-                self.move_x = -8
+                self.move_x = -self.speed
                 self.flip = True
             self.moving = True
         if self.flip:
@@ -345,7 +352,7 @@ class Goblin(pygame.sprite.Sprite):
         self.rect = self.rect.move(tile_width * pos_x, tile_height * pos_y)
         self.clock = pygame.time.Clock()
         self.hp = 5
-        self.speed = 4
+        self.speed = random.randint(3, 5)
         self.moving = False
         self.move_x, self.move_y = 0, 0
         self.flip = False
@@ -413,6 +420,13 @@ class Goblin(pygame.sprite.Sprite):
                 self.kill()
 
 
+class HealthPoints(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__(health_group)
+        self.image = load_image('health_ui.png')
+        self.rect = self.image.get_rect()
+
+
 class Camera:
     def __init__(self):
         self.dx = 0
@@ -436,15 +450,20 @@ if __name__ == '__main__':
 
     player_x, player_y = dungeon.render()
     player = Player(8, 2, player_x, player_y)
+    heath = HealthPoints()
 
     camera = Camera()
     x, y = 0, 0
     player_v = 6
     shot_v = 16
+    hp = 4
+    frames = 0
 
     moving = False
     flip = False
     doors_close = False
+    damage = False
+    visible = True
     running = True
     while running:
         screen.fill(pygame.Color((37, 19, 26)))
@@ -475,6 +494,11 @@ if __name__ == '__main__':
                     dungeon = Dungeon(f'map0{map_number}.tmx')
                     player_x, player_y = dungeon.render()
                     player = Player(8, 2, player_x, player_y)
+                    hp = 4
+                    flip = False
+                    doors_close = False
+                    damage = False
+                    visible = True
 
             elif event.type == pygame.KEYUP:
                 if event.key == pygame.K_a:
@@ -494,7 +518,21 @@ if __name__ == '__main__':
 
         player.rect.x += x
         player.rect.y += y
-        player.update(x, y, flip)
+        player_damage = player.update(x, y, flip)
+        if player_damage and not damage:
+            hp -= 1
+            damage = True
+            visible = False
+            if hp == 0:
+                [s.kill() for s in all_sprites]
+                dungeon = Dungeon(f'map0{map_number}.tmx')
+                player_x, player_y = dungeon.render()
+                player = Player(8, 2, player_x, player_y)
+                hp = 4
+                flip = False
+                doors_close = False
+                damage = False
+                visible = True
         shot_group.update(False)
         walls_group.update(False)
         doors_group.update(doors_close)
@@ -512,9 +550,20 @@ if __name__ == '__main__':
             doors_group.draw(screen)
         animated_sprites_group.draw(screen)
         enemy_group.draw(screen)
-        player_group.draw(screen)
+        if damage:
+            frames += 1
+            if frames % 20 == 0:
+                visible = not visible
+            if frames == 100:
+                frames = 0
+                damage = False
+        if visible:
+            player_group.draw(screen)
         shot_group.draw(screen)
         particle_group.draw(screen)
+        pygame.draw.rect(screen, pygame.Color((172, 50, 50)), (5, 0, 230, 48), 0)
+        pygame.draw.rect(screen, pygame.Color((0, 0, 0)), (55 + 45 * hp, 0, 45 * (4 - hp), 48), 0)
+        health_group.draw(screen)
         clock.tick(FPS)
         pygame.display.flip()
     pygame.quit()
