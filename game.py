@@ -442,20 +442,18 @@ class Skull(pygame.sprite.Sprite):
             self.close = close
         self.cur_frame = (self.cur_frame + 1) % len(self.frames)
         self.image = self.frames[self.cur_frame]
-        if len([self.rect.x + j for j in range(self.rect.width + 1) if self.rect.x + j in
-                                                                       [player.rect.x + i for i in
-                                                                        range(
-                                                                            player.rect.width + 1)]]) >= 1 \
+        if len([self.rect.x + j for j in range(self.rect.width + 1)
+                if self.rect.x + j in
+                [player.rect.x + i for i in range(player.rect.width + 1)]]) >= 1\
                 and not self.moving and self.close:
             if self.rect.y < player.rect.y:
                 self.move_y = self.speed
             else:
                 self.move_y = -self.speed
             self.moving = True
-        elif len([self.rect.y + j for j in range(self.rect.height + 1) if self.rect.y + j in
-                                                                          [player.rect.y + i for i
-                                                                           in range(
-                                                                              player.rect.height + 1)]]) >= 1 \
+        elif len([self.rect.y + j for j in range(self.rect.height + 1)
+                  if self.rect.y + j in
+                  [player.rect.y + i for i in range(player.rect.height + 1)]]) >= 1 \
                 and not self.moving and self.close:
             if self.rect.x < player.rect.x:
                 self.move_x = self.speed
