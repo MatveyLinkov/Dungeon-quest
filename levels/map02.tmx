@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="93" height="93" tilewidth="48" tileheight="48" infinite="0" nextlayerid="6" nextobjectid="20">
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="93" height="93" tilewidth="48" tileheight="48" infinite="0" nextlayerid="6" nextobjectid="28">
  <tileset firstgid="1" source="dungeon_tileset1.tsx"/>
  <tileset firstgid="101" source="../data/dungeon_tileset1.tsx"/>
  <tileset firstgid="201" source="../data/castle_tileset.tsx"/>
@@ -10,7 +10,7 @@
  </layer>
  <layer id="3" name="Слой тайлов 2" width="93" height="93">
   <data encoding="base64" compression="zlib">
-   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
+   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
   </data>
  </layer>
  <layer id="4" name="Слой тайлов 3" width="93" height="93">
@@ -23,7 +23,6 @@
   <object id="2" name="Skull" type="enemy" x="2019.33" y="146" width="41.3333" height="41.3333"/>
   <object id="3" name="Skull" type="enemy" x="2407" y="582" width="35" height="32"/>
   <object id="4" name="Mimic" type="enemy" x="4032.67" y="384.667" width="47.3333" height="45.3333"/>
-  <object id="5" name="Skull" type="enemy" x="1874" y="2497.67" width="44.6667" height="43.6667"/>
   <object id="6" name="Skull" type="enemy" x="194" y="2068.67" width="42.6667" height="39.3333"/>
   <object id="7" name="Skull" type="enemy" x="294" y="2499" width="39" height="39"/>
   <object id="8" name="Skull" type="enemy" x="488" y="1926" width="37" height="38"/>
@@ -37,6 +36,11 @@
   <object id="16" name="1" type="script" x="2113.33" y="645.33" width="238.667" height="48"/>
   <object id="17" name="4" type="script" x="2475" y="2111" width="50" height="242"/>
   <object id="18" name="4" type="script" x="2113.33" y="1940" width="240" height="51.3333"/>
-  <object id="19" name="3" type="script" x="665" y="2112.67" width="48" height="240.667"/>
+  <object id="19" name="3" type="script" x="660" y="2112.67" width="48" height="240.667"/>
+  <object id="20" name="Goblin" type="enemy" x="2018" y="2258" width="45" height="43"/>
+  <object id="22" name="Goblin" type="enemy" x="2211" y="2450" width="43" height="45"/>
+  <object id="23" name="Goblin" type="enemy" x="2257" y="2113" width="46" height="46"/>
+  <object id="26" name="Goblin" type="enemy" x="147" y="2258" width="44" height="42"/>
+  <object id="27" name="Goblin" type="enemy" x="434" y="2402" width="43" height="43"/>
  </objectgroup>
 </map>

@@ -40,6 +40,7 @@ def load_image(name, colorkey=None):
 
 player_sheet = pygame.transform.scale(load_image('knight_sheet.png'), (552, 150))
 skull_sheet = load_image('skull_sheet.png')
+goblin_sheet = load_image('goblin_spritesheet.png')
 arrow_image = pygame.transform.scale(load_image('arrow.png'), (48, 48))
 walls = []
 doors = [37, 38, 39, 40, 47, 48, 49, 50, 57, 58, 59, 60, 67, 68]
@@ -68,8 +69,10 @@ class Dungeon:
         for obj in self.map.objects:
             if obj.type == 'player':
                 self.player_x, self.player_y = obj.x // ts, obj.y // ts
-            elif obj.type == 'enemy' and obj.name == 'Skull':
+            elif obj.name == 'Skull':
                 Skull(4, 1, obj.x // ts, obj.y // ts, )
+            elif obj.name == 'Goblin':
+                Goblin(6, 2, obj.x // ts, obj.y // ts, )
             elif obj.type == 'script':
                 Script(obj.x, obj.y, obj.width, obj.height)
             elif obj.type == 'room':
@@ -290,6 +293,85 @@ class Skull(pygame.sprite.Sprite):
             self.rect.x -= self.move_x
             self.rect.y -= self.move_y
             self.move_x, self.move_y = 0, 0
+            self.moving = False
+        if pygame.sprite.spritecollideany(self, shot_group):
+            self.hp -= 1
+            shot_group.update(True)
+            if self.hp == 0:
+                self.kill()
+
+
+class Goblin(pygame.sprite.Sprite):
+    def __init__(self, columns, rows, pos_x, pos_y):
+        super().__init__(enemy_group, all_sprites)
+        self.frames = []
+        self.half_frames = 36
+        self.crop_sheet(goblin_sheet, columns, rows)
+        self.cur_frame = 0
+        self.image = self.frames[self.cur_frame]
+        self.rect = self.image.get_rect()
+        self.rect = self.rect.move(tile_width * pos_x, tile_height * pos_y)
+        self.clock = pygame.time.Clock()
+        self.hp = 5
+        self.speed = 4
+        self.moving = False
+        self.move_x, self.move_y = 0, 0
+        self.flip = False
+        self.close = False
+
+    def crop_sheet(self, sheet, columns, rows):
+        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
+                                sheet.get_height() // rows)
+        for i in range(rows):
+            for j in range(columns):
+                frame_coord = (self.rect.w * j, self.rect.h * i)
+                [self.frames.append(sheet.subsurface(pygame.Rect(frame_coord, self.rect.size)))
+                 for i in range(6)]
+
+    def update(self, close=False):
+        self.move_x, self.move_y = 0, 0
+        if close:
+            self.close = close
+        if self.moving:
+            self.cur_frame = (self.cur_frame + 1) % len(self.frames[self.half_frames:])
+            self.image = self.frames[self.half_frames:][self.cur_frame]
+        else:
+            self.cur_frame = (self.cur_frame + 1) % len(self.frames[:self.half_frames])
+            self.image = self.frames[:self.half_frames][self.cur_frame]
+        if (self.rect.x // ts, self.rect.y // ts) != (player.rect.x // ts, player.rect.y // ts) and\
+                self.close:
+            self.moving = True
+        if self.rect.x // ts < player.rect.x // ts:
+            self.move_x = self.speed
+            self.flip = False
+        elif self.rect.x // ts > player.rect.x // ts:
+            self.move_x = -self.speed
+            self.flip = True
+        elif self.rect.y // ts < player.rect.y // ts:
+            self.move_y = self.speed
+        elif self.rect.y // ts > player.rect.y // ts:
+            self.move_y = -self.speed
+        if self.flip:
+            self.image = pygame.transform.flip(self.image, True, False)
+        if not pygame.sprite.spritecollideany(self, walls_group):
+            if self.moving:
+                self.rect.x += self.move_x
+                self.rect.y += self.move_y
+        else:
+            if self.move_x != 0:
+                if self.rect.y // ts <= player.rect.y // ts:
+                    self.move_y = self.speed
+                elif self.rect.y // ts >= player.rect.y // ts:
+                    self.move_y = -self.speed
+                self.move_x = 0
+            elif self.move_y != 0:
+                if self.rect.x // ts < player.rect.x // ts:
+                    self.move_x = -self.speed
+                elif self.rect.x // ts > player.rect.x // ts:
+                    self.move_x = self.speed
+                self.move_y = 0
+            self.rect.x -= self.move_x
+            self.rect.y -= self.move_y
             self.moving = False
         if pygame.sprite.spritecollideany(self, shot_group):
             self.hp -= 1

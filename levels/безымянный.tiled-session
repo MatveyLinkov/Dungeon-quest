@@ -33,16 +33,16 @@
             "scale": 0.125,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 2140,
-                "y": 1536
+                "x": 2228,
+                "y": 2236
             }
         },
         "C:/Users/mrwtf/Desktop/map1.tmx": {
             "scale": 0.125,
-            "selectedLayer": 2,
+            "selectedLayer": 0,
             "viewCenter": {
-                "x": 1416,
-                "y": 408
+                "x": 2228,
+                "y": 2236
             }
         },
         "castle_tileset.tsx": {
@@ -72,19 +72,19 @@
             "scaleInEditor": 1
         },
         "map01.tmx": {
-            "scale": 0.75,
-            "selectedLayer": 2,
+            "scale": 0.5,
+            "selectedLayer": 3,
             "viewCenter": {
-                "x": 3768.6666666666665,
-                "y": 2425.333333333333
+                "x": 2231,
+                "y": 2231
             }
         },
         "map02.tmx": {
-            "scale": 0.33,
-            "selectedLayer": 3,
+            "scale": 0.75,
+            "selectedLayer": 1,
             "viewCenter": {
-                "x": 3337.878787878788,
-                "y": -75.75757575757575
+                "x": 2231.333333333333,
+                "y": 2231.333333333333
             }
         },
         "безымянный.tmx": {
@@ -105,25 +105,27 @@
     "map.tileWidth": 48,
     "map.width": 93,
     "openFiles": [
-        "map02.tmx",
         "map01.tmx",
         "dungeon_tileset1.tsx",
         "dungeon_map01.tmx",
         "castle_tileset.tsx",
         "dungeon_map1.tmx",
-        "безымянный.tmx"
+        "безымянный.tmx",
+        "map02.tmx",
+        "C:/Users/mrwtf/Desktop/map.tmx",
+        "C:/Users/mrwtf/Desktop/map1.tmx"
     ],
     "project": "безымянный.tiled-project",
     "recentFiles": [
-        "безымянный.tmx",
-        "dungeon_map1.tmx",
-        "castle_tileset.tsx",
-        "dungeon_map01.tmx",
-        "dungeon_tileset1.tsx",
         "map01.tmx",
-        "map02.tmx",
-        "C:/Users/mrwtf/Desktop/map.tmx",
+        "dungeon_tileset1.tsx",
+        "dungeon_map01.tmx",
+        "castle_tileset.tsx",
+        "dungeon_map1.tmx",
+        "безымянный.tmx",
         "C:/Users/mrwtf/Desktop/map1.tmx",
+        "C:/Users/mrwtf/Desktop/map.tmx",
+        "map02.tmx",
         "C:/Users/mrwtf/Desktop/Dungeon-quest-cloneo/levels/dungeon_map1.tmx"
     ],
     "tileset.lastUsedFormat": "tsx",
