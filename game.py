@@ -15,6 +15,7 @@ tiles_group = pygame.sprite.Group()
 walls_group = pygame.sprite.Group()
 doors_group = pygame.sprite.Group()
 animated_sprites_group = pygame.sprite.Group()
+particle_group = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
 shot_group = pygame.sprite.Group()
 enemy_group = pygame.sprite.Group()
@@ -42,6 +43,8 @@ player_sheet = pygame.transform.scale(load_image('knight_sheet.png'), (552, 150)
 skull_sheet = load_image('skull_sheet.png')
 goblin_sheet = load_image('goblin_spritesheet.png')
 arrow_image = pygame.transform.scale(load_image('arrow.png'), (48, 48))
+hit_effect_sheet = load_image('hit_effect.png')
+enemy_dead_sheet = load_image('enemy_afterdead.png')
 walls = []
 doors = [37, 38, 39, 40, 47, 48, 49, 50, 57, 58, 59, 60, 67, 68]
 animated_sprites = {75: 'flag_sheet.png', 89: 'key_sheet.png',
@@ -133,6 +136,32 @@ class AnimatedSprite(pygame.sprite.Sprite):
     def update(self):
         self.cur_frame = (self.cur_frame + 1) % len(self.frames)
         self.image = self.frames[self.cur_frame]
+
+
+class Particle(pygame.sprite.Sprite):
+    def __init__(self, columns, rows, pos_x, pos_y, image):
+        super().__init__(particle_group, all_sprites)
+        self.frames = []
+        self.crop_sheet(image, columns, rows)
+        self.cur_frame = 0
+        self.image = self.frames[self.cur_frame]
+        self.rect = self.image.get_rect()
+        self.rect = self.rect.move(pos_x, pos_y)
+
+    def crop_sheet(self, sheet, columns, rows):
+        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
+                                sheet.get_height() // rows)
+        for i in range(rows):
+            for j in range(columns):
+                frame_coord = (self.rect.w * j, self.rect.h * i)
+                [self.frames.append(sheet.subsurface(pygame.Rect(frame_coord, self.rect.size)))
+                 for i in range(8)]
+
+    def update(self, close=False):
+        self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+        self.image = self.frames[self.cur_frame]
+        if self.cur_frame == len(self.frames) - 1:
+            self.kill()
 
 
 class Door(pygame.sprite.Sprite):
@@ -231,6 +260,7 @@ class Shot(pygame.sprite.Sprite):
         self.rect = self.rect.move(self.vx, self.vy)
         if pygame.sprite.spritecollideany(self, walls_group) or\
                 (pygame.sprite.spritecollideany(self, enemy_group) and damage):
+            Particle(3, 1, self.rect.x, self.rect.y, hit_effect_sheet)
             self.kill()
 
 
@@ -298,6 +328,8 @@ class Skull(pygame.sprite.Sprite):
             self.hp -= 1
             shot_group.update(True)
             if self.hp == 0:
+                Particle(4, 1, self.rect.x, self.rect.y,
+                         pygame.transform.scale(enemy_dead_sheet, (288, 72)))
                 self.kill()
 
 
@@ -377,6 +409,7 @@ class Goblin(pygame.sprite.Sprite):
             self.hp -= 1
             shot_group.update(True)
             if self.hp == 0:
+                Particle(4, 1, self.rect.x, self.rect.y, enemy_dead_sheet)
                 self.kill()
 
 
@@ -469,6 +502,7 @@ if __name__ == '__main__':
         scripts_group.update()
         rooms_group.update()
         animated_sprites_group.update()
+        particle_group.update()
         enemy_group.update()
         for sprite in all_sprites:
             camera.apply(sprite)
@@ -480,6 +514,7 @@ if __name__ == '__main__':
         enemy_group.draw(screen)
         player_group.draw(screen)
         shot_group.draw(screen)
+        particle_group.draw(screen)
         clock.tick(FPS)
         pygame.display.flip()
     pygame.quit()

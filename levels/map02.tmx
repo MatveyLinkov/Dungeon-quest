@@ -37,10 +37,10 @@
   <object id="17" name="4" type="script" x="2475" y="2111" width="50" height="242"/>
   <object id="18" name="4" type="script" x="2113.33" y="1940" width="240" height="51.3333"/>
   <object id="19" name="3" type="script" x="660" y="2112.67" width="48" height="240.667"/>
-  <object id="20" name="Goblin" type="enemy" x="2018" y="2258" width="45" height="43"/>
+  <object id="20" name="Goblin" type="enemy" x="1968" y="2308" width="45" height="43"/>
   <object id="22" name="Goblin" type="enemy" x="2211" y="2450" width="43" height="45"/>
   <object id="23" name="Goblin" type="enemy" x="2257" y="2113" width="46" height="46"/>
-  <object id="26" name="Goblin" type="enemy" x="147" y="2258" width="44" height="42"/>
+  <object id="26" name="Goblin" type="enemy" x="147" y="2355" width="44" height="42"/>
   <object id="27" name="Goblin" type="enemy" x="434" y="2402" width="43" height="43"/>
  </objectgroup>
 </map>
