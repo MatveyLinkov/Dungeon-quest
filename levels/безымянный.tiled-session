@@ -1,0 +1,136 @@
+{
+    "Map/SizeTest": {
+        "height": 4300,
+        "width": 2
+    },
+    "activeFile": "map02.tmx",
+    "expandedProjectPaths": [
+        "."
+    ],
+    "fileStates": {
+        "C:/Users/mrwtf/Desktop/Dungeon-quest-cloneo/data/castle_tileset.tsx": {
+            "scaleInDock": 1
+        },
+        "C:/Users/mrwtf/Desktop/Dungeon-quest-cloneo/data/dungeon_tileset1.tsx": {
+            "scaleInDock": 1
+        },
+        "C:/Users/mrwtf/Desktop/Dungeon-quest-cloneo/levels/dungeon_map1.tmx": {
+            "scale": 0.25,
+            "selectedLayer": 3,
+            "viewCenter": {
+                "x": 1776,
+                "y": 1106
+            }
+        },
+        "C:/Users/mrwtf/Desktop/clonee/data/castle_tileset.tsx": {
+            "dynamicWrapping": false,
+            "scaleInDock": 1
+        },
+        "C:/Users/mrwtf/Desktop/clonee/data/dungeon_tileset1.tsx": {
+            "scaleInDock": 1
+        },
+        "C:/Users/mrwtf/Desktop/map.tmx": {
+            "scale": 0.125,
+            "selectedLayer": 1,
+            "viewCenter": {
+                "x": 2228,
+                "y": 2236
+            }
+        },
+        "C:/Users/mrwtf/Desktop/map1.tmx": {
+            "scale": 0.125,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 2228,
+                "y": 2236
+            }
+        },
+        "castle_tileset.tsx": {
+            "dynamicWrapping": true,
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "dungeon_map01.tmx": {
+            "scale": 0.125,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 2300,
+                "y": 2228
+            }
+        },
+        "dungeon_map1.tmx": {
+            "scale": 0.25,
+            "selectedLayer": 1,
+            "viewCenter": {
+                "x": 1774,
+                "y": 1102
+            }
+        },
+        "dungeon_tileset1.tsx": {
+            "dynamicWrapping": false,
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "map01.tmx": {
+            "scale": 0.5,
+            "selectedLayer": 3,
+            "viewCenter": {
+                "x": 2231,
+                "y": 2231
+            }
+        },
+        "map02.tmx": {
+            "scale": 0.75,
+            "selectedLayer": 1,
+            "viewCenter": {
+                "x": 2231.333333333333,
+                "y": 2231.333333333333
+            }
+        },
+        "безымянный.tmx": {
+            "scale": 0.125,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 2204,
+                "y": 2236
+            }
+        }
+    },
+    "last.imagePath": "C:/Users/mrwtf/Desktop/clonee/data",
+    "map.fixedSize": true,
+    "map.height": 93,
+    "map.lastUsedFormat": "tmx",
+    "map.layerDataFormat": null,
+    "map.tileHeight": 48,
+    "map.tileWidth": 48,
+    "map.width": 93,
+    "openFiles": [
+        "map01.tmx",
+        "dungeon_tileset1.tsx",
+        "dungeon_map01.tmx",
+        "castle_tileset.tsx",
+        "dungeon_map1.tmx",
+        "безымянный.tmx",
+        "map02.tmx",
+        "C:/Users/mrwtf/Desktop/map.tmx",
+        "C:/Users/mrwtf/Desktop/map1.tmx"
+    ],
+    "project": "безымянный.tiled-project",
+    "recentFiles": [
+        "map01.tmx",
+        "dungeon_tileset1.tsx",
+        "dungeon_map01.tmx",
+        "castle_tileset.tsx",
+        "dungeon_map1.tmx",
+        "безымянный.tmx",
+        "C:/Users/mrwtf/Desktop/map1.tmx",
+        "C:/Users/mrwtf/Desktop/map.tmx",
+        "map02.tmx",
+        "C:/Users/mrwtf/Desktop/Dungeon-quest-cloneo/levels/dungeon_map1.tmx"
+    ],
+    "tileset.lastUsedFormat": "tsx",
+    "tileset.tileSize": {
+        "height": 114,
+        "width": 114
+    }
+}
