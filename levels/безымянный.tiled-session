@@ -3,7 +3,7 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "map02.tmx",
+    "activeFile": "map01.tmx",
     "expandedProjectPaths": [
         "."
     ],
@@ -72,11 +72,11 @@
             "scaleInEditor": 1
         },
         "map01.tmx": {
-            "scale": 0.5,
+            "scale": 1,
             "selectedLayer": 3,
             "viewCenter": {
-                "x": 2231,
-                "y": 2231
+                "x": 3896.5,
+                "y": 641
             }
         },
         "map02.tmx": {
@@ -117,15 +117,15 @@
     ],
     "project": "безымянный.tiled-project",
     "recentFiles": [
-        "map01.tmx",
-        "dungeon_tileset1.tsx",
-        "dungeon_map01.tmx",
-        "castle_tileset.tsx",
-        "dungeon_map1.tmx",
-        "безымянный.tmx",
         "C:/Users/mrwtf/Desktop/map1.tmx",
         "C:/Users/mrwtf/Desktop/map.tmx",
         "map02.tmx",
+        "безымянный.tmx",
+        "dungeon_map1.tmx",
+        "castle_tileset.tsx",
+        "dungeon_map01.tmx",
+        "dungeon_tileset1.tsx",
+        "map01.tmx",
         "C:/Users/mrwtf/Desktop/Dungeon-quest-cloneo/levels/dungeon_map1.tmx"
     ],
     "tileset.lastUsedFormat": "tsx",
