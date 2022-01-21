@@ -14,12 +14,15 @@ screen = pygame.display.set_mode(size)
 all_sprites = pygame.sprite.Group()
 tiles_group = pygame.sprite.Group()
 walls_group = pygame.sprite.Group()
+barriers_group = pygame.sprite.Group()
 doors_group = pygame.sprite.Group()
 animated_sprites_group = pygame.sprite.Group()
 particle_group = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
 shot_group = pygame.sprite.Group()
 enemy_group = pygame.sprite.Group()
+skulls_group = pygame.sprite.Group()
+destroyer_group = pygame.sprite.Group()
 scripts_group = pygame.sprite.Group()
 rooms_group = pygame.sprite.Group()
 chest_group = pygame.sprite.Group()
@@ -54,14 +57,16 @@ closed_chest = load_image('chest_open_anim_1.png')
 key_image = load_image('key.png')
 arrow_image = pygame.transform.scale(load_image('arrow.png'), (48, 48))
 hit_effect_sheet = pygame.transform.scale(load_image('hit_effect.png'), (96, 32))
+explosion_sheet = pygame.transform.scale(load_image('explosion_sheet.png'), (336, 48))
 enemy_dead_sheet = load_image('enemy_afterdead.png')
 walls = []
 doors = [37, 38, 39, 40, 47, 48, 49, 50, 57, 58, 59, 60, 67, 68]
+barriers = [44, 45, 53, 54]
 animated_sprites = {75: 'flag_sheet.png',
                     91: 'torch_sheet.png', 94: 'candle_sheet.png'}
 weapons_image = {'wooden_bow': pygame.transform.scale(load_image('wooden_bow.png'), (48, 48)),
                  'iron_sword':
-                     pygame.transform.scale(load_image('slash_effect_anim.png'), (216, 72))}
+                     pygame.transform.scale(load_image('slash_effect_anim.png'), (259, 86))}
 weapons = ['wooden_bow', 'iron_sword']
 bows = ['wooden_bow']
 swords = ['iron_sword']
@@ -123,7 +128,7 @@ class Dungeon:
                 Room(obj.x, obj.y, obj.width, obj.height)
 
     def render(self):
-        for i in range(3):
+        for i in range(4):
             for y in range(self.height):
                 for x in range(self.width):
                     image = self.map.get_tile_image(x, y, i)
@@ -132,6 +137,8 @@ class Dungeon:
                             walls.append(self.get_tile_id((x, y), i))
                         if self.get_tile_id((x, y), i) in doors:
                             Door(x, y, image)
+                        elif i == 3:
+                            Barrier(x, y, image)
                         elif self.get_tile_id((x, y), i) in animated_sprites:
                             AnimatedSprite(self.get_tile_id((x, y), i), 4, 1, x, y)
                         elif self.get_tile_id((x, y), i) - 100 in animated_sprites:
@@ -160,11 +167,26 @@ class Dungeon:
 class Tile(pygame.sprite.Sprite):
     def __init__(self, tile_id, pos_x, pos_y, image):
         super().__init__(tiles_group, all_sprites)
-        if tile_id in walls and tile_id:
+        if tile_id in walls:
             self.add(walls_group)
         self.image = image
         self.rect = self.image.get_rect()
         self.rect = self.rect.move(tile_width * pos_x, tile_height * pos_y)
+
+
+class Barrier(pygame.sprite.Sprite):
+    def __init__(self, pos_x, pos_y, image):
+        super().__init__(barriers_group, all_sprites)
+        self.image = image
+        self.rect = self.image.get_rect()
+        self.rect = self.rect.move(tile_width * pos_x, tile_height * pos_y)
+
+    def update(self):
+        if pygame.sprite.spritecollideany(self, destroyer_group):
+            if [(destroyer.update(True), Particle(7, 1, self.rect.x, self.rect.y,
+                explosion_sheet, destroyer)) for destroyer in destroyer_group
+                    if pygame.sprite.collide_mask(self, destroyer)]:
+                self.kill()
 
 
 class Key(pygame.sprite.Sprite):
@@ -205,9 +227,11 @@ class AnimatedSprite(pygame.sprite.Sprite):
 
 
 class Particle(pygame.sprite.Sprite):
-    def __init__(self, columns, rows, pos_x, pos_y, image):
+    def __init__(self, columns, rows, pos_x, pos_y, image, enemy=None):
         super().__init__(particle_group, all_sprites)
         self.frames = []
+        self.sheet = image
+        self.enemy = enemy
         self.crop_sheet(image, columns, rows)
         self.cur_frame = 0
         self.image = self.frames[self.cur_frame]
@@ -223,11 +247,14 @@ class Particle(pygame.sprite.Sprite):
                 [self.frames.append(sheet.subsurface(pygame.Rect(frame_coord, self.rect.size)))
                  for i in range(8)]
 
-    def update(self, close=False):
+    def update(self, enemy=None):
         self.cur_frame = (self.cur_frame + 1) % len(self.frames)
         self.image = self.frames[self.cur_frame]
         if self.cur_frame == len(self.frames) - 1:
             self.kill()
+        if self.cur_frame == len(self.frames) // 2:
+            if self.sheet == explosion_sheet:
+                self.enemy.update(True)
 
 
 class Door(pygame.sprite.Sprite):
@@ -307,20 +334,19 @@ class Melee(pygame.sprite.Sprite):
         self.frames = []
         self.crop_sheet(weapons_image[weapon], 3, 1)
         self.cur_frame = 0
-        self.count = 0
         self.image = self.frames[self.cur_frame]
         self.angle = angle
         self.weapon = weapon
         self.rect = self.image.get_rect()
         self.rect.x, self.rect.y = x - 15, y - 10
         if angle == 270:
-            self.rect = self.rect.move(2, 16)
+            self.rect = self.rect.move(-6, 12)
         elif angle == 180:
-            self.rect = self.rect.move(-16, 0)
+            self.rect = self.rect.move(-18, -6)
         elif angle == 90:
-            self.rect = self.rect.move(2, -27)
+            self.rect = self.rect.move(-6, -30)
         elif angle == 0:
-            self.rect = self.rect.move(24, 0)
+            self.rect = self.rect.move(12, -6)
 
     def crop_sheet(self, sheet, columns, rows):
         self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
@@ -335,7 +361,6 @@ class Melee(pygame.sprite.Sprite):
         self.cur_frame = (self.cur_frame + 1) % len(self.frames)
         self.image = self.frames[self.cur_frame]
         self.image = pygame.transform.rotate(self.image, self.angle)
-        self.count += 1
         if self.cur_frame == len(self.frames) - 1:
             self.kill()
 
@@ -386,7 +411,8 @@ class Player(pygame.sprite.Sprite):
             self.image = self.frames[:self.half_frames][self.cur_frame]
         if flip:
             self.image = pygame.transform.flip(self.image, True, False)
-        if pygame.sprite.spritecollideany(self, walls_group):
+        if pygame.sprite.spritecollideany(self, walls_group) or\
+                pygame.sprite.spritecollideany(self, barriers_group):
             self.rect.x -= x
             self.rect.y -= y
         if pygame.sprite.spritecollideany(self, enemy_group):
@@ -431,7 +457,8 @@ class Shot(pygame.sprite.Sprite):
 
     def update(self, damage):
         self.rect = self.rect.move(self.vx, self.vy)
-        if pygame.sprite.spritecollideany(self, walls_group) or \
+        if pygame.sprite.spritecollideany(self, walls_group) or\
+                pygame.sprite.spritecollideany(self, barriers_group) or\
                 (pygame.sprite.spritecollideany(self, enemy_group) and damage):
             Particle(3, 1, self.rect.x + self.particle_x, self.rect.y + self.particle_y,
                      hit_effect_sheet)
@@ -440,7 +467,7 @@ class Shot(pygame.sprite.Sprite):
 
 class Skull(pygame.sprite.Sprite):
     def __init__(self, columns, rows, pos_x, pos_y):
-        super().__init__(enemy_group, all_sprites)
+        super().__init__(enemy_group, skulls_group, all_sprites)
         self.frames = []
         self.crop_sheet(skull_sheet, columns, rows)
         self.cur_frame = 0
@@ -449,6 +476,8 @@ class Skull(pygame.sprite.Sprite):
         self.rect = self.rect.move(tile_width * pos_x + 12, tile_height * pos_y + 12)
         self.mask = pygame.mask.from_surface(self.image)
         self.hp = 8
+        self.damage = 0
+        self.melee_strike = True
         self.speed = 7
         self.moving = False
         self.move_x, self.move_y = 0, 0
@@ -491,7 +520,8 @@ class Skull(pygame.sprite.Sprite):
             self.moving = True
         if self.flip:
             self.image = pygame.transform.flip(self.image, True, False)
-        if not pygame.sprite.spritecollideany(self, walls_group):
+        if not (pygame.sprite.spritecollideany(self, walls_group) or
+                pygame.sprite.spritecollideany(self, barriers_group)):
             if self.moving:
                 self.rect.x += self.move_x
                 self.rect.y += self.move_y
@@ -502,22 +532,25 @@ class Skull(pygame.sprite.Sprite):
             self.moving = False
         if pygame.sprite.spritecollideany(self, shot_group):
             if current_weapon == 'wooden_bow':
-                self.hp -= 1
+                self.damage = 1
                 shot_group.update(True)
-            if self.hp == 0:
-                self.kill()
-        if pygame.sprite.spritecollideany(self, melee_group):
+        if pygame.sprite.spritecollideany(self, melee_group) and self.melee_strike:
             if current_weapon == 'iron_sword':
-                self.hp -= 2
-        if self.hp == 0:
+                self.damage = 4
+        self.hp -= self.damage
+        self.damage = 0
+        if self.hp <= 0:
             Particle(4, 1, self.rect.x, self.rect.y,
                      pygame.transform.scale(enemy_dead_sheet, (288, 72)))
             self.kill()
+        self.melee_strike = False
+        if len(melee_group) == 0:
+            self.melee_strike = True
 
 
 class Goblin(pygame.sprite.Sprite):
     def __init__(self, columns, rows, pos_x, pos_y):
-        super().__init__(enemy_group, all_sprites)
+        super().__init__(enemy_group, destroyer_group, all_sprites)
         self.frames = []
         self.half_frames = 36
         self.crop_sheet(goblin_sheet, columns, rows)
@@ -525,9 +558,10 @@ class Goblin(pygame.sprite.Sprite):
         self.image = self.frames[self.cur_frame]
         self.rect = self.image.get_rect()
         self.rect = self.rect.move(tile_width * pos_x, tile_height * pos_y)
-        self.clock = pygame.time.Clock()
         self.hp = 5
-        self.speed = random.randint(4, 5)
+        self.damage = 0
+        self.melee_strike = True
+        self.speed = random.randint(3, 4)
         self.moving = False
         self.move_x, self.move_y = 0, 0
         self.flip = False
@@ -545,23 +579,23 @@ class Goblin(pygame.sprite.Sprite):
     def update(self, close=False):
         self.move_x, self.move_y = 0, 0
         if close:
-            self.close = close
+            self.close = not self.close
+        if (self.rect.x // ts, self.rect.y // ts) != (player.rect.x // ts, player.rect.y // ts) and\
+                self.close:
+            self.moving = True
         if self.moving:
             self.cur_frame = (self.cur_frame + 1) % len(self.frames[self.half_frames:])
             self.image = self.frames[self.half_frames:][self.cur_frame]
         else:
             self.cur_frame = (self.cur_frame + 1) % len(self.frames[:self.half_frames])
             self.image = self.frames[:self.half_frames][self.cur_frame]
-        if (self.rect.x // ts, self.rect.y // ts) != (player.rect.x // ts, player.rect.y // ts) and\
-                self.close:
-            self.moving = True
         if self.rect.x // ts < player.rect.x // ts:
             self.move_x = self.speed
             self.flip = False
         elif self.rect.x // ts > player.rect.x // ts:
             self.move_x = -self.speed
             self.flip = True
-        elif self.rect.y // ts < player.rect.y // ts:
+        if self.rect.y // ts < player.rect.y // ts:
             self.move_y = self.speed
         elif self.rect.y // ts > player.rect.y // ts:
             self.move_y = -self.speed
@@ -572,31 +606,24 @@ class Goblin(pygame.sprite.Sprite):
                 self.rect.x += self.move_x
                 self.rect.y += self.move_y
         else:
-            if self.move_x != 0:
-                if self.rect.y // ts <= player.rect.y // ts:
-                    self.move_y = self.speed
-                elif self.rect.y // ts >= player.rect.y // ts:
-                    self.move_y = -self.speed
-                self.move_x = 0
-            elif self.move_y != 0:
-                if self.rect.x // ts < player.rect.x // ts:
-                    self.move_x = -self.speed
-                elif self.rect.x // ts > player.rect.x // ts:
-                    self.move_x = self.speed
-                self.move_y = 0
             self.rect.x -= self.move_x
             self.rect.y -= self.move_y
-            self.moving = False
+        self.moving = False
         if pygame.sprite.spritecollideany(self, shot_group):
             if current_weapon == 'wooden_bow':
-                self.hp -= 1
+                self.damage = 1
                 shot_group.update(True)
         if pygame.sprite.spritecollideany(self, melee_group):
-            if current_weapon == 'iron_sword':
-                self.hp -= 2
+            if current_weapon == 'iron_sword' and self.melee_strike:
+                self.damage = 4
+        self.hp -= self.damage
+        self.damage = 0
         if self.hp <= 0:
             Particle(4, 1, self.rect.x, self.rect.y, enemy_dead_sheet)
             self.kill()
+        self.melee_strike = False
+        if len(melee_group) == 0:
+            self.melee_strike = True
 
 
 class HealthPoints(pygame.sprite.Sprite):
@@ -666,26 +693,23 @@ if __name__ == '__main__':
                 if event.key == pygame.K_LEFT:
                     if current_weapon in bows:
                         Shot(player.rect.x - 39, player.rect.y + 13, -shot_v, 0, 270)
-                    elif current_weapon in swords:
-                        Melee(player.rect.x - 39, player.rect.y + 13, current_weapon,
-                              180)
+                    elif current_weapon in swords and len(melee_group.sprites()) == 0:
+                        melee = Melee(player.rect.x - 39, player.rect.y + 13, current_weapon, 180)
                 elif event.key == pygame.K_RIGHT:
                     if current_weapon in bows:
                         Shot(player.rect.x + 60, player.rect.y + 13, shot_v, 0, 90)
-                    elif current_weapon in swords:
-                        Melee(player.rect.x + 60, player.rect.y + 13, current_weapon,
-                              0)
+                    elif current_weapon in swords and len(melee_group.sprites()) == 0:
+                        melee = Melee(player.rect.x + 60, player.rect.y + 13, current_weapon, 0)
                 elif event.key == pygame.K_UP:
                     if current_weapon in bows:
                         Shot(player.rect.x + 12, player.rect.y - 36, 0, -shot_v, 180)
-                    elif current_weapon in swords:
-                        Melee(player.rect.x + 12, player.rect.y - 36, current_weapon, 90)
+                    elif current_weapon in swords and len(melee_group.sprites()) == 0:
+                        melee = Melee(player.rect.x + 12, player.rect.y - 36, current_weapon, 90)
                 elif event.key == pygame.K_DOWN:
                     if current_weapon in bows:
                         Shot(player.rect.x + 12, player.rect.y + 69, 0, shot_v, 0)
-                    elif current_weapon in swords:
-                        Melee(player.rect.x + 12, player.rect.y + 69, current_weapon,
-                              270)
+                    elif current_weapon in swords and len(melee_group.sprites()) == 0:
+                        melee = Melee(player.rect.x + 12, player.rect.y + 69, current_weapon, 270)
 
                 elif event.key == pygame.K_r:
                     [s.kill() for s in all_sprites]
@@ -736,13 +760,13 @@ if __name__ == '__main__':
                 visible = True
         shot_group.update(False)
         melee_group.update()
-        walls_group.update(False)
         doors_group.update(doors_close)
         camera.update(player)
         scripts_group.update()
         rooms_group.update()
         animated_sprites_group.update()
         particle_group.update()
+        barriers_group.update()
         enemy_group.update()
         chest_group.update(button)
         key_group.update()
@@ -755,6 +779,7 @@ if __name__ == '__main__':
             camera.apply(sprite)
 
         tiles_group.draw(screen)
+        barriers_group.draw(screen)
         if doors_close:
             doors_group.draw(screen)
         ladder_group.draw(screen)
