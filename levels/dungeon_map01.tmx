@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="93" height="93" tilewidth="48" tileheight="48" infinite="0" nextlayerid="2" nextobjectid="1">
+ <tileset firstgid="1" source="dungeon_tileset1.tsx"/>
+ <layer id="1" name="Слой тайлов 1" width="114" height="114">
+  <data encoding="base64" compression="zlib">
+   eJzt0cEJgAAAAzGncv/RHEEfxQNNoAOUOw4AAAAAAAAAAAAAAAD+7vzA6BvouFE30HGjbqDjRt1Ax426gY4bdQMdN+oGOm7UDXTcqBvouFE30HGjbqDjRt1Ax426gY4bdQMdN+oGOm7UDXTcqBvouFE30HGjbqDjRt1Ax426gY4bdQMdN+oGOm7UDXTcqBvouFE30HGjbqDjRt1Ax426gY4bdQMdN+oGOm7UDXTcqBvouFE30HGjbqDjRt1Ax426gY4bdQMdN+oGOm7UDXTcqBvouFE30HGjbqDjRt1Ax3tPPtYNdNyoG+i4UTfQcaNuoONG3UBHAAAAAAAAAAAAAAAAAAAA4A0XMEoFIQ==
+  </data>
+ </layer>
+</map>
