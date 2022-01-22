@@ -5,7 +5,7 @@ import sys
 import pygame
 import pytmx
 
-map_number = input('Введите номер карты (1, 2): ')
+map_number = input('Введите номер карты (1, 2, 3): ')
 pygame.init()
 size = width, height = 1280, 720
 FPS = 60
@@ -52,6 +52,7 @@ def load_image(name, colorkey=None):
 player_sheet = pygame.transform.scale(load_image('knight_sheet.png'), (552, 150))
 skull_sheet = load_image('skull_sheet.png')
 goblin_sheet = load_image('goblin_spritesheet.png')
+bomber_sheet = pygame.transform.scale(load_image('bomber_spritesheet.png'), (288, 48))
 opened_chest = load_image('chest_open_anim_3.png')
 closed_chest = load_image('chest_open_anim_1.png')
 key_image = load_image('key.png')
@@ -122,6 +123,8 @@ class Dungeon:
                 Skull(4, 1, obj.x // ts, obj.y // ts, )
             elif obj.name == 'Goblin':
                 Goblin(6, 2, obj.x // ts, obj.y // ts, )
+            elif obj.name == 'Bomber':
+                Bomber(6, 1, obj.x // ts, obj.y // ts, )
             elif obj.type == 'script':
                 Script(obj.x, obj.y, obj.width, obj.height)
             elif obj.type == 'room':
@@ -340,7 +343,7 @@ class Melee(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x, self.rect.y = x - 15, y - 10
         if angle == 270:
-            self.rect = self.rect.move(-6, 12)
+            self.rect = self.rect.move(-6, 9)
         elif angle == 180:
             self.rect = self.rect.move(-18, -6)
         elif angle == 90:
@@ -624,6 +627,35 @@ class Goblin(pygame.sprite.Sprite):
         self.melee_strike = False
         if len(melee_group) == 0:
             self.melee_strike = True
+
+
+class Bomber(pygame.sprite.Sprite):
+    def __init__(self, columns, rows, pos_x, pos_y):
+        super().__init__(enemy_group, destroyer_group, all_sprites)
+        self.frames = []
+        self.crop_sheet(bomber_sheet, columns, rows)
+        self.cur_frame = 0
+        self.image = self.frames[self.cur_frame]
+        self.rect = self.image.get_rect()
+        self.rect = self.rect.move(tile_width * pos_x, tile_height * pos_y)
+        self.hp = 3
+        self.damage = 0
+        self.move_x, self.move_y = 0, 0
+        self.flip = False
+        self.close = False
+
+    def crop_sheet(self, sheet, columns, rows):
+        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
+                                sheet.get_height() // rows)
+        for i in range(rows):
+            for j in range(columns):
+                frame_coord = (self.rect.w * j, self.rect.h * i)
+                [self.frames.append(sheet.subsurface(pygame.Rect(frame_coord, self.rect.size)))
+                 for i in range(6)]
+
+    def update(self, close=False):
+        self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+        self.image = self.frames[self.cur_frame]
 
 
 class HealthPoints(pygame.sprite.Sprite):
