@@ -15,6 +15,8 @@ all_sprites = pygame.sprite.Group()
 tiles_group = pygame.sprite.Group()
 walls_group = pygame.sprite.Group()
 barriers_group = pygame.sprite.Group()
+empty_group = pygame.sprite.Group()
+bombs_group = pygame.sprite.Group()
 doors_group = pygame.sprite.Group()
 animated_sprites_group = pygame.sprite.Group()
 particle_group = pygame.sprite.Group()
@@ -57,6 +59,7 @@ opened_chest = load_image('chest_open_anim_3.png')
 closed_chest = load_image('chest_open_anim_1.png')
 key_image = load_image('key.png')
 arrow_image = pygame.transform.scale(load_image('arrow.png'), (48, 48))
+bomb_sheet = load_image('bomb_sheet.png')
 hit_effect_sheet = pygame.transform.scale(load_image('hit_effect.png'), (96, 32))
 explosion_sheet = pygame.transform.scale(load_image('explosion_sheet.png'), (336, 48))
 enemy_dead_sheet = load_image('enemy_afterdead.png')
@@ -141,7 +144,7 @@ class Dungeon:
                         if self.get_tile_id((x, y), i) in doors:
                             Door(x, y, image)
                         elif i == 3:
-                            Barrier(x, y, image)
+                            Barrier(self.get_tile_id((x, y), i), x, y, image)
                         elif self.get_tile_id((x, y), i) in animated_sprites:
                             AnimatedSprite(self.get_tile_id((x, y), i), 4, 1, x, y)
                         elif self.get_tile_id((x, y), i) - 100 in animated_sprites:
@@ -178,11 +181,13 @@ class Tile(pygame.sprite.Sprite):
 
 
 class Barrier(pygame.sprite.Sprite):
-    def __init__(self, pos_x, pos_y, image):
+    def __init__(self, id,  pos_x, pos_y, image):
         super().__init__(barriers_group, all_sprites)
         self.image = image
         self.rect = self.image.get_rect()
         self.rect = self.rect.move(tile_width * pos_x, tile_height * pos_y)
+        if id == 79 or id - 100 == 79:
+            self.add(empty_group)
 
     def update(self):
         if pygame.sprite.spritecollideany(self, destroyer_group):
@@ -190,6 +195,9 @@ class Barrier(pygame.sprite.Sprite):
                 explosion_sheet, destroyer)) for destroyer in destroyer_group
                     if pygame.sprite.collide_mask(self, destroyer)]:
                 self.kill()
+        elif pygame.sprite.spritecollideany(self, bombs_group) and self not in empty_group:
+            bombs_group.update(True)
+            self.kill()
 
 
 class Key(pygame.sprite.Sprite):
@@ -257,7 +265,8 @@ class Particle(pygame.sprite.Sprite):
             self.kill()
         if self.cur_frame == len(self.frames) // 2:
             if self.sheet == explosion_sheet:
-                self.enemy.update(True)
+                if self.enemy:
+                    self.enemy.update(True)
 
 
 class Door(pygame.sprite.Sprite):
@@ -420,6 +429,9 @@ class Player(pygame.sprite.Sprite):
             self.rect.y -= y
         if pygame.sprite.spritecollideany(self, enemy_group):
             return True
+        elif pygame.sprite.spritecollideany(self, bombs_group):
+            bombs_group.update(True)
+            return True
 
 
 class Chest(pygame.sprite.Sprite):
@@ -460,9 +472,11 @@ class Shot(pygame.sprite.Sprite):
 
     def update(self, damage):
         self.rect = self.rect.move(self.vx, self.vy)
-        if pygame.sprite.spritecollideany(self, walls_group) or\
-                pygame.sprite.spritecollideany(self, barriers_group) or\
-                (pygame.sprite.spritecollideany(self, enemy_group) and damage):
+        if pygame.sprite.spritecollideany(self, walls_group) or \
+                (pygame.sprite.spritecollideany(self, barriers_group) and not
+                 pygame.sprite.spritecollideany(self, empty_group)) or \
+                ((pygame.sprite.spritecollideany(self, enemy_group) or
+                  pygame.sprite.spritecollideany(self, bombs_group)) and damage):
             Particle(3, 1, self.rect.x + self.particle_x, self.rect.y + self.particle_y,
                      hit_effect_sheet)
             self.kill()
@@ -564,7 +578,7 @@ class Goblin(pygame.sprite.Sprite):
         self.hp = 5
         self.damage = 0
         self.melee_strike = True
-        self.speed = random.randint(3, 4)
+        self.speed = 3
         self.moving = False
         self.move_x, self.move_y = 0, 0
         self.flip = False
@@ -643,6 +657,8 @@ class Bomber(pygame.sprite.Sprite):
         self.move_x, self.move_y = 0, 0
         self.flip = False
         self.close = False
+        self.bomb = None
+        self.time = 0
 
     def crop_sheet(self, sheet, columns, rows):
         self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
@@ -654,8 +670,64 @@ class Bomber(pygame.sprite.Sprite):
                  for i in range(6)]
 
     def update(self, close=False):
+        if close:
+            self.close = close
         self.cur_frame = (self.cur_frame + 1) % len(self.frames)
         self.image = self.frames[self.cur_frame]
+        if len([self.rect.y + j for j in range(self.rect.height + 1)
+                if self.rect.y + j in
+                   [player.rect.y + i for i in range(player.rect.height + 1)]]) >= 1 and self.close:
+            if self.rect.x < player.rect.x:
+                if not self.bomb or not self.bomb.alive():
+                    self.time += 1
+                    if self.time == 25:
+                        self.bomb = Bomb(10, 1, self.rect.x, self.rect.y)
+                        self.time = 0
+        if pygame.sprite.spritecollideany(self, shot_group):
+            if current_weapon == 'wooden_bow':
+                self.damage = 1
+                shot_group.update(True)
+        self.hp -= self.damage
+        self.damage = 0
+        if self.hp <= 0:
+            Particle(4, 1, self.rect.x, self.rect.y, enemy_dead_sheet)
+            self.kill()
+
+
+class Bomb(pygame.sprite.Sprite):
+    def __init__(self, columns, rows, pos_x, pos_y):
+        super().__init__(bombs_group, all_sprites)
+        self.frames = []
+        self.crop_sheet(bomb_sheet, columns, rows)
+        self.cur_frame = 0
+        self.image = self.frames[self.cur_frame]
+        self.rect = self.image.get_rect()
+        self.rect = self.rect.move(pos_x + 48, pos_y)
+        self.speed = 8
+
+    def crop_sheet(self, sheet, columns, rows):
+        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
+                                sheet.get_height() // rows)
+        for i in range(rows):
+            for j in range(columns):
+                frame_coord = (self.rect.w * j, self.rect.h * i)
+                [self.frames.append(sheet.subsurface(pygame.Rect(frame_coord, self.rect.size)))
+                 for i in range(8)]
+
+    def update(self, damage=False):
+        self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+        self.image = self.frames[self.cur_frame]
+        self.rect.x += self.speed
+        if pygame.sprite.spritecollideany(self, walls_group) or \
+            ((pygame.sprite.spritecollideany(self, barriers_group) and damage) and not
+             pygame.sprite.spritecollideany(self, empty_group)) or \
+                (pygame.sprite.spritecollideany(self, player_group) and damage) or\
+                pygame.sprite.spritecollideany(self, shot_group) or\
+                pygame.sprite.spritecollideany(self, melee_group):
+            if pygame.sprite.spritecollideany(self, shot_group):
+                shot_group.update(True)
+            Particle(7, 1, self.rect.x, self.rect.y, explosion_sheet)
+            self.kill()
 
 
 class HealthPoints(pygame.sprite.Sprite):
@@ -800,6 +872,7 @@ if __name__ == '__main__':
         particle_group.update()
         barriers_group.update()
         enemy_group.update()
+        bombs_group.update()
         chest_group.update(button)
         key_group.update()
         if inventory[3] is not None:
@@ -821,6 +894,7 @@ if __name__ == '__main__':
         key_group.draw(screen)
         animated_sprites_group.draw(screen)
         enemy_group.draw(screen)
+        bombs_group.draw(screen)
         if damage:
             frames += 1
             if frames % 20 == 0:

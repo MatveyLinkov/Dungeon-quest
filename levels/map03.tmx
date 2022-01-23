@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="93" height="93" tilewidth="48" tileheight="48" infinite="0" nextlayerid="7" nextobjectid="29">
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="93" height="93" tilewidth="48" tileheight="48" infinite="0" nextlayerid="7" nextobjectid="34">
  <tileset firstgid="1" source="../../clonee/levels/dungeon_tileset1.tsx"/>
  <tileset firstgid="101" source="../../clonee/data/dungeon_tileset1.tsx"/>
  <tileset firstgid="201" source="../../clonee/data/castle_tileset.tsx"/>
@@ -10,7 +10,7 @@
  </layer>
  <layer id="3" name="Слой тайлов 2" width="93" height="93">
   <data encoding="base64" compression="zlib">
-   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
+   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
   </data>
  </layer>
  <layer id="4" name="Слой тайлов 3" width="93" height="93">
@@ -20,7 +20,7 @@
  </layer>
  <layer id="5" name="Слой тайлов 4" width="93" height="93">
   <data encoding="base64" compression="zlib">
-   eJzt291qwjAYBuDe/+3sLrqz7WA34B1sO9tkrVMooW36k6QpPg8ERMWkL8lnGrRpAIBL0MhvmLX8ywgzH3uedGJzWu7pxfKUeXpzeco7jzDTse9S0hnLVNZ5yfc4MgcAAAAAAAAAAFJ4CVqtwv8xTP1+rS08ri3WZH7E9bx17f3+OJZ3aXvziGXeJugjhRqy7r3e2x5jmdeQcczHQf3myryG+XRGn137mnn9TN+hvTOsvZ+u/S54X82ZD2v4tfmfQ9fjhnOTq7bUIsy8N7d2S3iGzB/6rL+bZWs3pz01LlbPLzs/f6+5veFR41q7V5oa51zmZ9i/1DzGqXubmmvLw/CeNFRqbqxZW7Gavzbz3NdX67xdU2unMt+yPy8xp7b2kbvGh2c9c2tvytLMjzhfWtNX25Q5E6rpjA0AAAAAAAAAAAAAAAAAeD5/hFGZMg==
+   eJzt21FugjAcB2Duf53dwr1tD7uAN3C+qZnNaEYIFIFCS/Z9STMDi+DP8m8ltGkAgOuzPZ7t0v5leyHn7/Z1zP/W2UZ+j+avf1862+/N73dAXqEvh5zvI/sfiX0sM5Vn6OeXif9hnltiX/g+jKn59et1HDdjjTeO5hXy7NeWsO3ayHorsS+r1/vTpwEAAAAAAAAAgBzeeq1W50TrOu18XkvMybzE5/l4ts/29VTee1uTxyuZn1YeI5ehrL8KnMd729YYyryGjGu1NvOxfl762j2q8Ix06pndI42hwRGuvbDuZWq9Ue2Zd2t4XDdSer3OVvW8Fv3Mg9LP229Vz2vRHVfiup3Say9zzROHMj+vfP+1UvPwUuc1d246dJ5TmR9h/lLzOY79tqm5tkTd36R9e/WNOddWquYvqedbf75a++2cWjuW+ZL5+R59aukxtq7x/Xs9qWtvzKuZl7i/NOdYp2afe0I13WMDAAAAAAAAAAAAAAAAAP6fH9MMoKM=
   </data>
  </layer>
  <objectgroup id="6" name="Слой объектов 1">
@@ -31,7 +31,7 @@
   <object id="5" name="Slime" type="enemy" x="1824.67" y="47.6667" width="46" height="49"/>
   <object id="6" name="Slime" type="enemy" x="1824.33" y="97.6667" width="46.6667" height="45"/>
   <object id="7" name="Goblin" type="enemy" x="2020" y="1970.67" width="42" height="40.6667"/>
-  <object id="8" name="Goblin" type="enemy" x="2353.67" y="2497.67" width="43.3333" height="42.6667"/>
+  <object id="8" name="Goblin" type="enemy" x="2117.67" y="2497.67" width="43.3333" height="42.6667"/>
   <object id="9" name="Goblin" type="enemy" x="2160" y="2352.5" width="44" height="44"/>
   <object id="11" name="Skull" type="enemy" x="4237" y="444" width="27" height="28"/>
   <object id="12" name="Goblin" type="enemy" x="3900" y="396" width="28" height="28"/>
@@ -40,8 +40,8 @@
   <object id="15" name="Bomber" type="enemy" x="97.3333" y="2210" width="44.6667" height="42"/>
   <object id="16" name="Bomber" type="enemy" x="96" y="2400" width="46.6667" height="47.3333"/>
   <object id="17" name="Skull" type="enemy" x="529.5" y="2018.5" width="45" height="44"/>
-  <object id="18" name="Goblin" type="enemy" x="292.667" y="2072.33" width="34.6667" height="29.3333"/>
-  <object id="19" name="Goblin" type="enemy" x="486" y="2456" width="35" height="36"/>
+  <object id="18" name="Goblin" type="enemy" x="340.667" y="2072.33" width="34.6667" height="29.3333"/>
+  <object id="19" name="Goblin" type="enemy" x="439.333" y="2454.67" width="35" height="36"/>
   <object id="20" name="1" type="room" x="3688" y="44" width="732" height="728"/>
   <object id="21" name="1" type="script" x="3938" y="650" width="241" height="47"/>
   <object id="22" name="4" type="room" x="3696" y="1868" width="722" height="722"/>
