@@ -6,7 +6,6 @@ import pygame
 import pytmx
 
 map_number = input('Введите номер уровня (1, 2, 3): ')
-print('Нажмите T для смены режима')
 maps = {'map1.tmx': [23, (11, 8)], 'map2.tmx': [24, (10, 7)],
         'map3.tmx': [23, (12, 5)]}
 level = 'map' + map_number + '.tmx'
@@ -63,6 +62,7 @@ def load_image(name, colorkey=None):
 
 
 floor = [6, 15, 21, 22, 23, 24, 30, 31, 32, 33]
+completed_levels = []
 player_sheet = pygame.transform.scale(load_image('knight_sheet.png'), (552, 150))
 skull_sheet = load_image('skull_sheet.png')
 goblin_sheet = load_image('goblin_spritesheet.png')
@@ -166,6 +166,8 @@ class Dungeon:
         for obj in self.map.objects:
             if obj.type == 'player':
                 self.player_x, self.player_y = obj.x // ts, obj.y // ts
+            elif obj.type == 'room' and obj.name not in completed_levels:
+                Room(obj.name, obj.x, obj.y, obj.width, obj.height)
             elif obj.name == 'Skull':
                 Skull(4, 1, obj.x // ts, obj.y // ts, )
             elif obj.name == 'Goblin':
@@ -174,8 +176,6 @@ class Dungeon:
                 Bomber(6, 1, obj.x // ts, obj.y // ts, )
             elif obj.type == 'script':
                 Script(obj.x, obj.y, obj.width, obj.height)
-            elif obj.type == 'room':
-                Room(obj.x, obj.y, obj.width, obj.height)
 
     def render(self):
         for i in range(4):
@@ -366,8 +366,9 @@ class Door(pygame.sprite.Sprite):
 
 
 class Room(pygame.sprite.Sprite):
-    def __init__(self, pos_x, pos_y, width, height):
+    def __init__(self, name, pos_x, pos_y, width, height):
         super().__init__(rooms_group, all_sprites)
+        self.name = name
         self.image = pygame.Surface((width, height))
         self.rect = pygame.Rect(pos_x, pos_y, width, height)
         self.fight = False
@@ -377,6 +378,8 @@ class Room(pygame.sprite.Sprite):
         if pygame.sprite.spritecollideany(self, player_group):
             if not pygame.sprite.spritecollideany(self, enemy_group):
                 doors_close = False
+                self.kill()
+                completed_levels.append(self.name)
             if not self.fight and doors_close:
                 [enemy.update(True) for enemy in enemy_group if
                  pygame.sprite.collide_mask(self, enemy)]
@@ -395,13 +398,14 @@ class Hatch(pygame.sprite.Sprite):
         self.rect = self.rect.move(tile_width * pos_x, tile_height * pos_y)
 
     def update(self, button, key_available):
-        if button == 'e' and key_available is True:
+        global dungeon_map, change_mode
+        if button == 'e' and key_available is True and not change_mode:
             if pygame.sprite.spritecollideany(self, player_group):
                 self.count += 1
-                if self.count == 1:
-                    pass
-        else:
-            pass
+                [s.kill() for s in all_sprites]
+                dungeon_map = False
+                change_mode = True
+                inventory[3] = None
 
 
 class Ladder(pygame.sprite.Sprite):
@@ -413,13 +417,12 @@ class Ladder(pygame.sprite.Sprite):
         self.rect = self.rect.move(tile_width * pos_x, tile_height * pos_y)
 
     def update(self, button):
+        global map_number, restart
         if button == 'e':
-            if pygame.sprite.spritecollideany(self, player_group):
+            if pygame.sprite.spritecollideany(self, player_group) and self.count == 0:
                 self.count += 1
-                if self.count == 1:
-                    pass
-        else:
-            pass
+                map_number = str(int(map_number) + 1)
+                restart = True
 
 
 class Melee(pygame.sprite.Sprite):
@@ -470,10 +473,12 @@ class Script(pygame.sprite.Sprite):
         if pygame.sprite.spritecollideany(self, player_group) or fight:
             doors_close = True
             self.kill()
+        elif not pygame.sprite.spritecollideany(self, rooms_group):
+            self.kill()
 
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, columns, rows, pos_x, pos_y):
+    def __init__(self, columns, rows, pos_x, pos_y, change):
         super().__init__(player_group, all_sprites)
         self.frames = []
         self.half_frames = 24
@@ -483,9 +488,11 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         if not final:
             self.rect = self.rect.move(tile_width * pos_x + 12, tile_height * pos_y + 12)
+            if change:
+                for hatch in hatch_group:
+                    self.rect.x, self.rect.y = hatch.rect.x - 12, hatch.rect.y - 12
         else:
             self.rect = self.rect.move(600, 350)
-        self.mask = pygame.mask.from_surface(self.image)
         self.damage = False
         self.visible = True
         self.time = 0
@@ -640,7 +647,7 @@ class Skull(pygame.sprite.Sprite):
                 self.damage = 4
         self.hp -= self.damage
         self.damage = 0
-        if self.hp <= 0:
+        if self.hp <= 0 or not pygame.sprite.spritecollideany(self, rooms_group):
             Particle(4, 1, self.rect.x, self.rect.y,
                      pygame.transform.scale(enemy_dead_sheet, (288, 72)))
             self.kill()
@@ -719,7 +726,7 @@ class Goblin(pygame.sprite.Sprite):
                 self.damage = 4
         self.hp -= self.damage
         self.damage = 0
-        if self.hp <= 0:
+        if self.hp <= 0 or not pygame.sprite.spritecollideany(self, rooms_group):
             Particle(4, 1, self.rect.x, self.rect.y, enemy_dead_sheet)
             self.kill()
         self.melee_strike = False
@@ -773,7 +780,7 @@ class Bomber(pygame.sprite.Sprite):
                 shot_group.update(True)
         self.hp -= self.damage
         self.damage = 0
-        if self.hp <= 0:
+        if self.hp <= 0 or not pygame.sprite.spritecollideany(self, rooms_group):
             Particle(4, 1, self.rect.x, self.rect.y, enemy_dead_sheet)
             self.kill()
 
@@ -995,13 +1002,15 @@ class Camera:
 
 
 def draw(screen, text, position, color):
-    global restart
+    global restart, dungeon_map
     if text == 0:
         text = 'X'
     elif text < 0:
         restart = True
-    if position == maps[level][1]:
+    if position == maps[level][1] and text != -1:
         text = 'WIN'
+        [s.kill() for s in all_sprites]
+        dungeon_map = True
     screen.fill((0, 0, 0))
     font = pygame.font.Font(None, 50)
     text = font.render(str(text), True, color)
@@ -1029,6 +1038,7 @@ if __name__ == '__main__':
     damage = False
     visible = True
     restart = False
+    change_mode = False
     running = True
     while running:
         screen.fill(pygame.Color((37, 19, 26)))
@@ -1040,7 +1050,8 @@ if __name__ == '__main__':
                 pygame.mouse.set_visible(False)
 
                 player_x, player_y = dungeon.render()
-                player = Player(8, 2, player_x, player_y)
+                player = Player(8, 2, player_x, player_y, change_mode)
+                x, y = 0, 0
                 player_v = 6
                 heath = HealthPoints()
             for event in pygame.event.get():
@@ -1075,16 +1086,18 @@ if __name__ == '__main__':
                             Shot(player.rect.x + 12, player.rect.y + 69, 0, shot_v, 0)
                         elif current_weapon in swords and len(melee_group.sprites()) == 0:
                             Melee(player.rect.x + 12, player.rect.y + 69, current_weapon, 270)
-                    elif event.key == pygame.K_r:
+                    elif event.key == pygame.K_r or restart:
                         [s.kill() for s in all_sprites]
                         dungeon = Dungeon(f'map0{map_number}.tmx')
                         player_x, player_y = dungeon.render()
-                        player = Player(8, 2, player_x, player_y)
+                        player = Player(8, 2, player_x, player_y, change_mode)
                         hp = 4
                         flip = False
                         doors_close = False
                         damage = False
                         visible = True
+                        restart = False
+                        change_mode = False
                     elif event.key == pygame.K_ESCAPE:
                         [s.kill() for s in all_sprites]
                         final = True
@@ -1098,11 +1111,8 @@ if __name__ == '__main__':
                         choose_weapon(1)
                     elif event.key == pygame.K_2:
                         choose_weapon(2)
-                    elif event.key == pygame.K_t:
-                        [s.kill() for s in all_sprites]
-                        dungeon_map = False
 
-                elif event.type == pygame.KEYUP:
+                elif event.type == pygame.KEYUP and not change_mode:
                     if event.key == pygame.K_a:
                         x += player_v
                     elif event.key == pygame.K_w:
@@ -1120,6 +1130,7 @@ if __name__ == '__main__':
             elif x > 0:
                 flip = False
             if not final:
+                change_mode = False
                 player.rect.x += x
                 player.rect.y += y
                 player_damage = player.update(x, y, flip)
@@ -1131,7 +1142,7 @@ if __name__ == '__main__':
                         [s.kill() for s in all_sprites]
                         dungeon = Dungeon(f'map0{map_number}.tmx')
                         player_x, player_y = dungeon.render()
-                        player = Player(8, 2, player_x, player_y)
+                        player = Player(8, 2, player_x, player_y, change_mode)
                         hp = 4
                         flip = False
                         doors_close = False
@@ -1196,15 +1207,14 @@ if __name__ == '__main__':
                 player_x, player_y = castle.render()
                 player = MiniPlayer(8, 2, player_x, player_y)
                 player_v = 64
+            moving = False
+            x, y = 0, 0
             if restart:
-                for sprite in all_sprites:
-                    sprite.kill()
+                [sprite.kill() for sprite in all_sprites]
                 castle = Castle(level)
                 player_x, player_y = castle.render()
                 player = MiniPlayer(8, 2, player_x, player_y)
                 restart = False
-            moving = False
-            x, y = 0, 0
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
@@ -1222,9 +1232,6 @@ if __name__ == '__main__':
                         y = player_v
                     elif event.key == pygame.K_r:
                         restart = True
-                    elif event.key == pygame.K_t:
-                        [s.kill() for s in all_sprites]
-                        dungeon_map = True
             if (x, y) != (0, 0):
                 moving = True
 
