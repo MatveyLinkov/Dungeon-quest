@@ -417,12 +417,13 @@ class Ladder(pygame.sprite.Sprite):
         self.rect = self.rect.move(tile_width * pos_x, tile_height * pos_y)
 
     def update(self, button):
-        global map_number, restart
+        global map_number, restart, transit
         if button == 'e':
             if pygame.sprite.spritecollideany(self, player_group) and self.count == 0:
                 self.count += 1
                 map_number = str(int(map_number) + 1)
                 restart = True
+                transit = True
 
 
 class Melee(pygame.sprite.Sprite):
@@ -1001,6 +1002,10 @@ class Camera:
         self.dy = height // 2 - target.rect.y - target.rect.h // 2
 
 
+def transition():
+    screen.fill(pygame.Color(0, 0, 0))
+
+
 def draw(screen, text, position, color):
     global restart, dungeon_map
     if text == 0:
@@ -1008,7 +1013,7 @@ def draw(screen, text, position, color):
     elif text < 0:
         restart = True
     if position == maps[level][1] and text != -1:
-        text = 'WIN'
+        text = ''
         [s.kill() for s in all_sprites]
         dungeon_map = True
     screen.fill((0, 0, 0))
@@ -1039,12 +1044,15 @@ if __name__ == '__main__':
     visible = True
     restart = False
     change_mode = False
+    transit = False
+    transit_time = 0
     running = True
     while running:
         screen.fill(pygame.Color((37, 19, 26)))
         moving = False
         if dungeon_map:
             if len(player_group) == 0:
+                transit = True
                 ts = tile_width = tile_height = 48
                 dungeon = Dungeon(f'map0{map_number}.tmx')
                 pygame.mouse.set_visible(False)
@@ -1054,6 +1062,20 @@ if __name__ == '__main__':
                 x, y = 0, 0
                 player_v = 6
                 heath = HealthPoints()
+            if restart:
+                [s.kill() for s in all_sprites]
+                completed_levels.clear()
+                dungeon = Dungeon(f'map0{map_number}.tmx')
+                player_x, player_y = dungeon.render()
+                player = Player(8, 2, player_x, player_y, change_mode)
+                hp = 4
+                completed_levels.clear()
+                flip = False
+                doors_close = False
+                damage = False
+                visible = True
+                change_mode = False
+                restart = False
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
@@ -1086,18 +1108,8 @@ if __name__ == '__main__':
                             Shot(player.rect.x + 12, player.rect.y + 69, 0, shot_v, 0)
                         elif current_weapon in swords and len(melee_group.sprites()) == 0:
                             Melee(player.rect.x + 12, player.rect.y + 69, current_weapon, 270)
-                    elif event.key == pygame.K_r or restart:
-                        [s.kill() for s in all_sprites]
-                        dungeon = Dungeon(f'map0{map_number}.tmx')
-                        player_x, player_y = dungeon.render()
-                        player = Player(8, 2, player_x, player_y, change_mode)
-                        hp = 4
-                        flip = False
-                        doors_close = False
-                        damage = False
-                        visible = True
-                        restart = False
-                        change_mode = False
+                    elif event.key == pygame.K_r:
+                        restart = True
                     elif event.key == pygame.K_ESCAPE:
                         [s.kill() for s in all_sprites]
                         final = True
@@ -1139,15 +1151,7 @@ if __name__ == '__main__':
                     damage = True
                     visible = False
                     if hp == 0:
-                        [s.kill() for s in all_sprites]
-                        dungeon = Dungeon(f'map0{map_number}.tmx')
-                        player_x, player_y = dungeon.render()
-                        player = Player(8, 2, player_x, player_y, change_mode)
-                        hp = 4
-                        flip = False
-                        doors_close = False
-                        damage = False
-                        visible = True
+                        restart = True
                 shot_group.update(False)
                 melee_group.update()
                 doors_group.update(doors_close)
@@ -1196,12 +1200,14 @@ if __name__ == '__main__':
                 pygame.draw.rect(screen, pygame.Color((0, 0, 0)), (55 + 45 * hp, 0, 45 * (4 - hp),
                                                                    48), 0)
                 health_group.draw(screen)
+                button = None
             else:
                 screen.fill('black')
                 animated_sprites_group.update()
                 animated_sprites_group.draw(screen)
         else:
             if len(player_group) == 0:
+                transit = True
                 ts = tile_width = tile_height = 64
                 castle = Castle(level)
                 player_x, player_y = castle.render()
@@ -1251,6 +1257,12 @@ if __name__ == '__main__':
             mini_doors_group.draw(screen)
             player_group.draw(screen)
             spikes_group.draw(screen)
+        if transit:
+            transition()
+            transit_time += 1
+            if transit_time == 20:
+                transit = False
+                transit_time = 0
         clock.tick(FPS)
         pygame.display.flip()
     pygame.quit()
