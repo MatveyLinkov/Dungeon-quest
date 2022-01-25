@@ -5,16 +5,22 @@ import sys
 import pygame
 import pytmx
 
-map_number = input('Введите номер карты (1, 2): ')
+map_number = input('Введите номер уровня (1, 2, 3): ')
+maps = {'map1.tmx': [23, (11, 8)], 'map2.tmx': [24, (10, 7)],
+        'map3.tmx': [23, (12, 5)]}
+level = 'map' + map_number + '.tmx'
 pygame.init()
 size = width, height = 1280, 720
 FPS = 60
 MAPS_DIR = 'levels'
 screen = pygame.display.set_mode(size)
+final = False
 all_sprites = pygame.sprite.Group()
 tiles_group = pygame.sprite.Group()
 walls_group = pygame.sprite.Group()
 barriers_group = pygame.sprite.Group()
+empty_group = pygame.sprite.Group()
+bombs_group = pygame.sprite.Group()
 doors_group = pygame.sprite.Group()
 animated_sprites_group = pygame.sprite.Group()
 particle_group = pygame.sprite.Group()
@@ -31,6 +37,12 @@ hatch_group = pygame.sprite.Group()
 ladder_group = pygame.sprite.Group()
 melee_group = pygame.sprite.Group()
 health_group = pygame.sprite.Group()
+slimes_group = pygame.sprite.Group()
+tables_group = pygame.sprite.Group()
+spikes_group = pygame.sprite.Group()
+mini_player_group = pygame.sprite.Group()
+mini_keys_group = pygame.sprite.Group()
+mini_doors_group = pygame.sprite.Group()
 all_cells_group = pygame.sprite.Group()
 weapon_group = pygame.sprite.Group()
 
@@ -51,20 +63,29 @@ def load_image(name, colorkey=None):
     return image
 
 
+floor = [6, 15, 21, 22, 23, 24, 30, 31, 32, 33]
+completed_levels = []
 player_sheet = pygame.transform.scale(load_image('knight_sheet.png'), (552, 150))
 skull_sheet = load_image('skull_sheet.png')
 goblin_sheet = load_image('goblin_spritesheet.png')
+bomber_sheet = pygame.transform.scale(load_image('bomber_spritesheet.png'), (288, 48))
 cell_image = pygame.transform.scale(load_image('inventory_cell.png'), (50, 50))
 choose_cell = pygame.transform.scale(load_image('active_cell.png'), (50, 50))
 key_inventory = pygame.transform.scale(load_image('key_inv.png'), (20, 38))
-sword = pygame.transform.scale(load_image('slash_effect_anim.png'), (20, 38))
 opened_chest = load_image('chest_open_anim_3.png')
 closed_chest = load_image('chest_open_anim_1.png')
 key_image = load_image('key.png')
 arrow_image = pygame.transform.scale(load_image('arrow.png'), (48, 48))
+bomb_sheet = load_image('bomb_sheet.png')
 hit_effect_sheet = pygame.transform.scale(load_image('hit_effect.png'), (96, 32))
 explosion_sheet = pygame.transform.scale(load_image('explosion_sheet.png'), (336, 48))
 enemy_dead_sheet = load_image('enemy_afterdead.png')
+game_over = pygame.transform.scale(load_image('game_over.png'), (750, 375))
+player_dead = pygame.transform.scale(load_image('knight_dead.png'), (138, 102))
+animated_slimes = pygame.transform.scale(load_image('slime_animated.png'), (1728, 576))
+mini_player_sheet = pygame.transform.scale(load_image('knight_sheet.png'), (448, 112))
+slime_sheet = load_image('slime_idle_spritesheet.png')
+spikes_images = ['holes.png', 'spikes.png', 'on_holes.png', 'on_spikes.png']
 walls = []
 doors = [37, 38, 39, 40, 47, 48, 49, 50, 57, 58, 59, 60, 67, 68]
 barriers = [44, 45, 53, 54]
@@ -91,6 +112,32 @@ def terminate():
 
 def start_screen():
     pass
+
+
+class FinalScreen(pygame.sprite.Sprite):
+    def __init__(self, columns, rows, pos_x, pos_y, image, flip=False):
+        super().__init__(animated_sprites_group, all_sprites)
+        self.frames = []
+        self.crop_sheet(image, columns, rows)
+        self.cur_frame = 0
+        self.image = self.frames[self.cur_frame]
+        self.rect = self.image.get_rect()
+        self.rect = self.rect.move(pos_x, pos_y)
+        self.flip = flip
+
+    def crop_sheet(self, sheet, columns, rows):
+        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
+                                sheet.get_height() // rows)
+        for i in range(rows):
+            for j in range(columns):
+                frame_coord = (self.rect.w * j, self.rect.h * i)
+                [self.frames.append(sheet.subsurface(pygame.Rect(frame_coord, self.rect.size)))
+                 for i in range(6)]
+
+    def update(self):
+        self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+        self.image = self.frames[self.cur_frame]
+        self.image = pygame.transform.flip(self.image, self.flip, False)
 
 
 def getting_weapon():
@@ -126,17 +173,19 @@ class Dungeon:
         for obj in self.map.objects:
             if obj.type == 'player':
                 self.player_x, self.player_y = obj.x // ts, obj.y // ts
+            elif obj.type == 'room' and obj.name not in completed_levels:
+                Room(obj.name, obj.x, obj.y, obj.width, obj.height)
             elif obj.name == 'Skull':
                 Skull(4, 1, obj.x // ts, obj.y // ts, )
             elif obj.name == 'Goblin':
                 Goblin(6, 2, obj.x // ts, obj.y // ts, )
+            elif obj.name == 'Bomber':
+                Bomber(6, 1, obj.x // ts, obj.y // ts, )
             elif obj.type == 'script':
                 Script(obj.x, obj.y, obj.width, obj.height)
-            elif obj.type == 'room':
-                Room(obj.x, obj.y, obj.width, obj.height)
 
     def render(self):
-        for i in range(3):
+        for i in range(4):
             for y in range(self.height):
                 for x in range(self.width):
                     image = self.map.get_tile_image(x, y, i)
@@ -146,7 +195,7 @@ class Dungeon:
                         if self.get_tile_id((x, y), i) in doors:
                             Door(x, y, image)
                         elif i == 3:
-                            Barrier(x, y, image)
+                            Barrier(self.get_tile_id((x, y), i), x, y, image)
                         elif self.get_tile_id((x, y), i) in animated_sprites:
                             AnimatedSprite(self.get_tile_id((x, y), i), 4, 1, x, y)
                         elif self.get_tile_id((x, y), i) - 100 in animated_sprites:
@@ -172,6 +221,44 @@ class Dungeon:
         return self.map.tiledgidmap[self.map.get_tile_gid(*position, layer)]
 
 
+class Castle:
+    def __init__(self, filename):
+        super().__init__()
+        self.map = pytmx.load_pygame(f'{MAPS_DIR}/{filename}')
+        self.height = self.map.height
+        self.width = self.map.width
+        self.tile_size = self.map.tilewidth
+        for obj in self.map.objects:
+            if obj.name == 'Player':
+                self.player_x, self.player_y = obj.x // tile_width, obj.y // tile_height
+            elif obj.name == 'Slime':
+                Slime(6, 1, obj.x // tile_width, obj.y // tile_height)
+            elif obj.name == 'Spike':
+                Spikes(obj.x // tile_width, obj.y // tile_height)
+
+    def render(self):
+        for i in range(4):
+            for y in range(self.height):
+                for x in range(self.width):
+                    image = self.map.get_tile_image(x, y, i)
+                    if image:
+                        if i == 3:
+                            Table(x, y, image)
+                        elif self.get_tile_id((x, y), i) == 6:
+                            MiniKey(x, y, image)
+                        elif self.get_tile_id((x, y), i) == 37:
+                            MiniDoor(x, y, image)
+                        else:
+                            Tile(self.get_tile_id((x, y), i), x, y, image)
+        return self.player_x, self.player_y
+
+    def get_tile_id(self, position, layer):
+        try:
+            return self.map.tiledgidmap[self.map.get_tile_gid(*position, layer)]
+        except KeyError:
+            pass
+
+
 class Tile(pygame.sprite.Sprite):
     def __init__(self, tile_id, pos_x, pos_y, image):
         super().__init__(tiles_group, all_sprites)
@@ -183,11 +270,13 @@ class Tile(pygame.sprite.Sprite):
 
 
 class Barrier(pygame.sprite.Sprite):
-    def __init__(self, pos_x, pos_y, image):
+    def __init__(self, id,  pos_x, pos_y, image):
         super().__init__(barriers_group, all_sprites)
         self.image = image
         self.rect = self.image.get_rect()
         self.rect = self.rect.move(tile_width * pos_x, tile_height * pos_y)
+        if id == 79 or id - 100 == 79:
+            self.add(empty_group)
 
     def update(self):
         if pygame.sprite.spritecollideany(self, destroyer_group):
@@ -195,6 +284,9 @@ class Barrier(pygame.sprite.Sprite):
                 explosion_sheet, destroyer)) for destroyer in destroyer_group
                     if pygame.sprite.collide_mask(self, destroyer)]:
                 self.kill()
+        elif pygame.sprite.spritecollideany(self, bombs_group) and self not in empty_group:
+            bombs_group.update(True)
+            self.kill()
 
 
 class Key(pygame.sprite.Sprite):
@@ -263,7 +355,8 @@ class Particle(pygame.sprite.Sprite):
             self.kill()
         if self.cur_frame == len(self.frames) // 2:
             if self.sheet == explosion_sheet:
-                self.enemy.update(True)
+                if self.enemy:
+                    self.enemy.update(True)
 
 
 class Door(pygame.sprite.Sprite):
@@ -281,8 +374,9 @@ class Door(pygame.sprite.Sprite):
 
 
 class Room(pygame.sprite.Sprite):
-    def __init__(self, pos_x, pos_y, width, height):
+    def __init__(self, name, pos_x, pos_y, width, height):
         super().__init__(rooms_group, all_sprites)
+        self.name = name
         self.image = pygame.Surface((width, height))
         self.rect = pygame.Rect(pos_x, pos_y, width, height)
         self.fight = False
@@ -292,6 +386,8 @@ class Room(pygame.sprite.Sprite):
         if pygame.sprite.spritecollideany(self, player_group):
             if not pygame.sprite.spritecollideany(self, enemy_group):
                 doors_close = False
+                self.kill()
+                completed_levels.append(self.name)
             if not self.fight and doors_close:
                 [enemy.update(True) for enemy in enemy_group if
                  pygame.sprite.collide_mask(self, enemy)]
@@ -310,13 +406,14 @@ class Hatch(pygame.sprite.Sprite):
         self.rect = self.rect.move(tile_width * pos_x, tile_height * pos_y)
 
     def update(self, button, key_available):
-        if button == 'e' and key_available is True:
+        global dungeon_map, change_mode
+        if button == 'e' and key_available is True and not change_mode:
             if pygame.sprite.spritecollideany(self, player_group):
                 self.count += 1
-                if self.count == 1:
-                    pass
-        else:
-            pass
+                [s.kill() for s in all_sprites]
+                dungeon_map = False
+                change_mode = True
+                inventory[3] = None
 
 
 class Ladder(pygame.sprite.Sprite):
@@ -328,13 +425,13 @@ class Ladder(pygame.sprite.Sprite):
         self.rect = self.rect.move(tile_width * pos_x, tile_height * pos_y)
 
     def update(self, button):
+        global map_number, restart, transit
         if button == 'e':
-            if pygame.sprite.spritecollideany(self, player_group):
+            if pygame.sprite.spritecollideany(self, player_group) and self.count == 0:
                 self.count += 1
-                if self.count == 1:
-                    pass
-        else:
-            pass
+                map_number = str(int(map_number) + 1)
+                restart = True
+                transit = True
 
 
 class Melee(pygame.sprite.Sprite):
@@ -349,7 +446,7 @@ class Melee(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x, self.rect.y = x - 15, y - 10
         if angle == 270:
-            self.rect = self.rect.move(-6, 12)
+            self.rect = self.rect.move(-6, 9)
         elif angle == 180:
             self.rect = self.rect.move(-18, -6)
         elif angle == 90:
@@ -385,10 +482,12 @@ class Script(pygame.sprite.Sprite):
         if pygame.sprite.spritecollideany(self, player_group) or fight:
             doors_close = True
             self.kill()
+        elif not pygame.sprite.spritecollideany(self, rooms_group):
+            self.kill()
 
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, columns, rows, pos_x, pos_y):
+    def __init__(self, columns, rows, pos_x, pos_y, change):
         super().__init__(player_group, all_sprites)
         self.frames = []
         self.half_frames = 24
@@ -396,8 +495,13 @@ class Player(pygame.sprite.Sprite):
         self.cur_frame = 0
         self.image = self.frames[self.cur_frame]
         self.rect = self.image.get_rect()
-        self.rect = self.rect.move(tile_width * pos_x + 12, tile_height * pos_y + 12)
-        self.mask = pygame.mask.from_surface(self.image)
+        if not final:
+            self.rect = self.rect.move(tile_width * pos_x + 12, tile_height * pos_y + 12)
+            if change:
+                for hatch in hatch_group:
+                    self.rect.x, self.rect.y = hatch.rect.x - 12, hatch.rect.y - 12
+        else:
+            self.rect = self.rect.move(600, 350)
         self.damage = False
         self.visible = True
         self.time = 0
@@ -411,20 +515,22 @@ class Player(pygame.sprite.Sprite):
                 [self.frames.append(sheet.subsurface(pygame.Rect(frame_coord, self.rect.size)))
                  for i in range(3)]
 
-    def update(self, x, y, flip):
+    def update(self, x, y, flip=False):
         if moving:
             self.cur_frame = (self.cur_frame + 1) % len(self.frames[self.half_frames:])
             self.image = self.frames[self.half_frames:][self.cur_frame]
         else:
             self.cur_frame = (self.cur_frame + 1) % len(self.frames[:self.half_frames])
             self.image = self.frames[:self.half_frames][self.cur_frame]
-        if flip:
-            self.image = pygame.transform.flip(self.image, True, False)
+        self.image = pygame.transform.flip(self.image, flip, False)
         if pygame.sprite.spritecollideany(self, walls_group) or\
                 pygame.sprite.spritecollideany(self, barriers_group):
             self.rect.x -= x
             self.rect.y -= y
         if pygame.sprite.spritecollideany(self, enemy_group):
+            return True
+        elif pygame.sprite.spritecollideany(self, bombs_group):
+            bombs_group.update(True)
             return True
 
 
@@ -467,9 +573,11 @@ class Shot(pygame.sprite.Sprite):
 
     def update(self, damage):
         self.rect = self.rect.move(self.vx, self.vy)
-        if pygame.sprite.spritecollideany(self, walls_group) or\
-                pygame.sprite.spritecollideany(self, barriers_group) or\
-                (pygame.sprite.spritecollideany(self, enemy_group) and damage):
+        if pygame.sprite.spritecollideany(self, walls_group) or \
+                (pygame.sprite.spritecollideany(self, barriers_group) and not
+                 pygame.sprite.spritecollideany(self, empty_group)) or \
+                ((pygame.sprite.spritecollideany(self, enemy_group) or
+                  pygame.sprite.spritecollideany(self, bombs_group)) and damage):
             Particle(3, 1, self.rect.x + self.particle_x, self.rect.y + self.particle_y,
                      hit_effect_sheet)
             self.kill()
@@ -549,7 +657,7 @@ class Skull(pygame.sprite.Sprite):
                 self.damage = 4
         self.hp -= self.damage
         self.damage = 0
-        if self.hp <= 0:
+        if self.hp <= 0 or not pygame.sprite.spritecollideany(self, rooms_group):
             Particle(4, 1, self.rect.x, self.rect.y,
                      pygame.transform.scale(enemy_dead_sheet, (288, 72)))
             self.kill()
@@ -571,7 +679,7 @@ class Goblin(pygame.sprite.Sprite):
         self.hp = 5
         self.damage = 0
         self.melee_strike = True
-        self.speed = random.randint(3, 4)
+        self.speed = 3
         self.moving = False
         self.move_x, self.move_y = 0, 0
         self.flip = False
@@ -628,12 +736,99 @@ class Goblin(pygame.sprite.Sprite):
                 self.damage = 4
         self.hp -= self.damage
         self.damage = 0
-        if self.hp <= 0:
+        if self.hp <= 0 or not pygame.sprite.spritecollideany(self, rooms_group):
             Particle(4, 1, self.rect.x, self.rect.y, enemy_dead_sheet)
             self.kill()
         self.melee_strike = False
         if len(melee_group) == 0:
             self.melee_strike = True
+
+
+class Bomber(pygame.sprite.Sprite):
+    def __init__(self, columns, rows, pos_x, pos_y):
+        super().__init__(enemy_group, destroyer_group, all_sprites)
+        self.frames = []
+        self.crop_sheet(bomber_sheet, columns, rows)
+        self.cur_frame = 0
+        self.image = self.frames[self.cur_frame]
+        self.rect = self.image.get_rect()
+        self.rect = self.rect.move(tile_width * pos_x, tile_height * pos_y)
+        self.hp = 3
+        self.damage = 0
+        self.move_x, self.move_y = 0, 0
+        self.flip = False
+        self.close = False
+        self.bomb = None
+        self.time = 0
+
+    def crop_sheet(self, sheet, columns, rows):
+        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
+                                sheet.get_height() // rows)
+        for i in range(rows):
+            for j in range(columns):
+                frame_coord = (self.rect.w * j, self.rect.h * i)
+                [self.frames.append(sheet.subsurface(pygame.Rect(frame_coord, self.rect.size)))
+                 for i in range(6)]
+
+    def update(self, close=False):
+        if close:
+            self.close = close
+        self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+        self.image = self.frames[self.cur_frame]
+        if len([self.rect.y + j for j in range(self.rect.height + 1)
+                if self.rect.y + j in
+                   [player.rect.y + i for i in range(player.rect.height + 1)]]) >= 1 and self.close:
+            if self.rect.x < player.rect.x:
+                if not self.bomb or not self.bomb.alive():
+                    self.time += 1
+                    if self.time == 25:
+                        self.bomb = Bomb(10, 1, self.rect.x, self.rect.y)
+                        self.time = 0
+        if pygame.sprite.spritecollideany(self, shot_group):
+            if current_weapon == 'wooden_bow':
+                self.damage = 1
+                shot_group.update(True)
+        self.hp -= self.damage
+        self.damage = 0
+        if self.hp <= 0 or not pygame.sprite.spritecollideany(self, rooms_group):
+            Particle(4, 1, self.rect.x, self.rect.y, enemy_dead_sheet)
+            self.kill()
+
+
+class Bomb(pygame.sprite.Sprite):
+    def __init__(self, columns, rows, pos_x, pos_y):
+        super().__init__(bombs_group, all_sprites)
+        self.frames = []
+        self.crop_sheet(bomb_sheet, columns, rows)
+        self.cur_frame = 0
+        self.image = self.frames[self.cur_frame]
+        self.rect = self.image.get_rect()
+        self.rect = self.rect.move(pos_x + 48, pos_y)
+        self.speed = 8
+
+    def crop_sheet(self, sheet, columns, rows):
+        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
+                                sheet.get_height() // rows)
+        for i in range(rows):
+            for j in range(columns):
+                frame_coord = (self.rect.w * j, self.rect.h * i)
+                [self.frames.append(sheet.subsurface(pygame.Rect(frame_coord, self.rect.size)))
+                 for i in range(8)]
+
+    def update(self, damage=False):
+        self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+        self.image = self.frames[self.cur_frame]
+        self.rect.x += self.speed
+        if pygame.sprite.spritecollideany(self, walls_group) or \
+            ((pygame.sprite.spritecollideany(self, barriers_group) and damage) and not
+             pygame.sprite.spritecollideany(self, empty_group)) or \
+                (pygame.sprite.spritecollideany(self, player_group) and damage) or\
+                pygame.sprite.spritecollideany(self, shot_group) or\
+                pygame.sprite.spritecollideany(self, melee_group):
+            if pygame.sprite.spritecollideany(self, shot_group):
+                shot_group.update(True)
+            Particle(7, 1, self.rect.x, self.rect.y, explosion_sheet)
+            self.kill()
 
 
 class HealthPoints(pygame.sprite.Sprite):
@@ -663,6 +858,165 @@ class WeaponInInventory(pygame.sprite.Sprite):
         self.rect = self.rect.move(1145 + 50 * section, 5)
 
 
+class MiniPlayer(pygame.sprite.Sprite):
+    def __init__(self, columns, rows, pos_x, pos_y):
+        super().__init__(player_group, all_sprites)
+        self.pos_x, self.pos_y = pos_x, pos_y
+        self.frames = []
+        self.half_frames = 24
+        self.crop_sheet(mini_player_sheet, columns, rows)
+        self.cur_frame = 0
+        self.image = self.frames[self.cur_frame]
+        self.rect = self.image.get_rect()
+        self.rect = self.rect.move(tile_width * pos_x + 4, tile_height * pos_y + 4)
+        self.mask = pygame.mask.from_surface(self.image)
+        self.attempt = maps[level][0]
+        self.color = 'white'
+
+    def crop_sheet(self, sheet, columns, rows):
+        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
+                                sheet.get_height() // rows)
+        for i in range(rows):
+            for j in range(columns):
+                frame_coord = (self.rect.w * j, self.rect.h * i)
+                [self.frames.append(sheet.subsurface(pygame.Rect(frame_coord, self.rect.size)))
+                 for i in range(3)]
+
+    def update(self, x, y, flip, back=False):
+        damage = 0
+        self.cur_frame = (self.cur_frame + 1) % len(self.frames[:self.half_frames])
+        self.image = self.frames[:self.half_frames][self.cur_frame]
+        self.pos_x += x // ts
+        self.pos_y += y // ts
+        if moving:
+            damage += 1
+        if flip:
+            self.image = pygame.transform.flip(self.image, True, False)
+        if not castle.get_tile_id((self.rect.x // 64, self.rect.y // 64), 0) or back:
+            self.rect.x -= x
+            self.rect.y -= y
+            self.pos_x = self.rect.x // ts
+            self.pos_y = self.rect.y // ts
+            damage -= 1
+        if damage == 1:
+            self.color = 'white'
+        if ((self.pos_x, self.pos_y) in [(s.rect.x // ts, s.rect.y // ts) for s in spikes_group] and
+            damage == 1 and not pygame.sprite.spritecollideany(self, tables_group or slimes_group))\
+                or (back and (self.pos_x, self.pos_y) in [(s.rect.x // ts, s.rect.y // ts)
+                                                          for s in spikes_group]):
+            damage += 1
+            self.color = 'red'
+        self.attempt -= damage
+        draw(screen, self.attempt, (self.rect.x // ts, self.rect.y // ts), self.color)
+
+
+class Slime(pygame.sprite.Sprite):
+    def __init__(self, columns, rows, pos_x, pos_y):
+        super().__init__(slimes_group, all_sprites)
+        self.pos_x, self.pos_y = pos_x, pos_y
+        self.frames = []
+        self.crop_sheet(slime_sheet, columns, rows)
+        self.cur_frame = 0
+        self.image = self.frames[self.cur_frame]
+        self.rect = self.image.get_rect()
+        self.rect = self.rect.move(tile_width * pos_x + 8, tile_height * pos_y + 8)
+
+    def crop_sheet(self, sheet, columns, rows):
+        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
+                                sheet.get_height() // rows)
+        for i in range(rows):
+            for j in range(columns):
+                frame_coord = (self.rect.w * j, self.rect.h * i)
+                [self.frames.append(sheet.subsurface(pygame.Rect(frame_coord, self.rect.size)))
+                 for i in range(5)]
+
+    def update(self, x, y, flip):
+        self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+        self.image = self.frames[self.cur_frame]
+        if (self.pos_x, self.pos_y) == (player.rect.x // ts, player.rect.y // ts):
+            self.rect.x += x
+            self.rect.y += y
+            self.pos_x += x // ts
+            self.pos_y += y // ts
+            player_group.update(x, y, flip, True)
+            if pygame.sprite.spritecollideany(self, tables_group):
+                self.kill()
+        tile_id = castle.get_tile_id((self.pos_x, self.pos_y), 0)
+        if (tile_id not in floor or len([sprite for slime_sprite in slimes_group
+                                         if self != slime_sprite and (self.rect.x, self.rect.y) ==
+                                        (slime_sprite.rect.x, slime_sprite.rect.y)]) >= 1):
+            self.kill()
+
+
+class Table(pygame.sprite.Sprite):
+    def __init__(self, pos_x, pos_y, image):
+        super().__init__(tables_group, all_sprites)
+        self.pos_x, self.pos_y = pos_x, pos_y
+        self.image = image
+        self.rect = self.image.get_rect()
+        self.rect = self.rect.move(tile_width * pos_x, tile_height * pos_y)
+
+    def update(self, x, y, flip):
+        touch = 0
+        if (self.rect.x // ts, self.rect.y // ts) == (player.rect.x // ts, player.rect.y // ts):
+            self.rect.x += x
+            self.rect.y += y
+            touch += 1
+            player_group.update(x, y, flip, True)
+        if (castle.get_tile_id((self.rect.x // ts, self.rect.y // ts), 1) or (
+                (self.rect.x // ts, self.rect.y // ts) in
+                [(spike_sprite.rect.x // ts, spike_sprite.rect.y // ts)
+                 for spike_sprite in tables_group if self != spike_sprite] and touch >= 1) or
+                ((self.rect.x // ts, self.rect.y // ts) in
+                 [(round(slimes_sprite.rect.x / ts), round(slimes_sprite.rect.y / ts))
+                  for slimes_sprite in slimes_group])):
+            self.rect.x -= x
+            self.rect.y -= y
+
+
+class Spikes(pygame.sprite.Sprite):
+    def __init__(self, pos_x, pos_y):
+        super().__init__(spikes_group, all_sprites)
+        self.pos_x, self.pos_y = pos_x, pos_y
+        self.image = pygame.transform.scale(load_image(spikes_images[0]), (64, 64))
+        self.rect = self.image.get_rect()
+        self.rect = self.rect.move(tile_width * pos_x, tile_height * pos_y)
+
+    def update(self):
+        self.image = pygame.transform.scale(load_image(spikes_images[1]), (64, 64))
+        if (self.pos_x, self.pos_y) in [(s.rect.x // ts, s.rect.y // ts) for s in tables_group] or\
+                pygame.sprite.spritecollideany(self, player_group):
+            self.image = pygame.transform.scale(load_image(spikes_images[3]), (64, 64))
+
+
+class MiniKey(pygame.sprite.Sprite):
+    def __init__(self, pos_x, pos_y, image):
+        super().__init__(mini_keys_group, all_sprites)
+        self.pos_x, self.pos_y = pos_x, pos_y
+        self.image = image
+        self.rect = self.image.get_rect()
+        self.rect = self.rect.move(tile_width * pos_x, tile_height * pos_y)
+
+    def update(self):
+        if pygame.sprite.spritecollideany(self, player_group):
+            self.kill()
+
+
+class MiniDoor(pygame.sprite.Sprite):
+    def __init__(self, pos_x, pos_y, image):
+        super().__init__(mini_doors_group, all_sprites)
+        self.pos_x, self.pos_y = pos_x, pos_y
+        self.image = image
+        self.rect = self.image.get_rect()
+        self.rect = self.rect.move(tile_width * pos_x, tile_height * pos_y)
+
+    def update(self):
+        if len(mini_keys_group.sprites()) == 0:
+            self.kill()
+        if pygame.sprite.spritecollideany(self, player_group):
+            player_group.update(x, y, flip, True)
+
+
 class Camera:
     def __init__(self):
         self.dx = 0
@@ -677,167 +1031,273 @@ class Camera:
         self.dy = height // 2 - target.rect.y - target.rect.h // 2
 
 
+def transition():
+    screen.fill(pygame.Color(0, 0, 0))
+
+
+def draw(screen, text, position, color):
+    global restart, dungeon_map
+    if text == 0:
+        text = 'X'
+    elif text < 0:
+        restart = True
+    if position == maps[level][1] and text != -1:
+        text = ''
+        [s.kill() for s in all_sprites]
+        dungeon_map = True
+    screen.fill((0, 0, 0))
+    font = pygame.font.Font(None, 50)
+    text = font.render(str(text), True, color)
+    text_x = 10
+    text_y = 10
+    screen.blit(text, (text_x, text_y))
+
+
 if __name__ == '__main__':
-    pygame.display.set_caption('Dungeon Quest: alpha')
+    pygame.display.set_caption('Dungeon Quest: beta')
 
-    dungeon = Dungeon(f'map0{map_number}.tmx')
-    clock = pygame.time.Clock()
-    pygame.mouse.set_visible(False)
-
-    player_x, player_y = dungeon.render()
-    player = Player(8, 2, player_x, player_y)
-    heath = HealthPoints()
-
-    for section in range(0, 3):
-        cell = Inventory(section)
-    cell = Inventory(0, True)
-    WeaponInInventory(weapons_image.get('wooden_bow'), 0)
-
-    button = None
-    chest_opened_count = 0
-
-    camera = Camera()
+    dungeon_map = True
     x, y = 0, 0
     player_v = 6
     shot_v = 16
     hp = 4
     frames = 0
-
+    chest_opened_count = 0
+    camera = Camera()
+    clock = pygame.time.Clock()
+    button = None
     moving = False
     flip = False
     doors_close = False
     damage = False
     visible = True
+    restart = False
+    change_mode = False
+    transit = False
+    transit_time = 0
     running = True
     while running:
         screen.fill(pygame.Color((37, 19, 26)))
         moving = False
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
+        if dungeon_map:
+            if len(player_group) == 0:
+                transit = True
+                ts = tile_width = tile_height = 48
+                dungeon = Dungeon(f'map0{map_number}.tmx')
+                pygame.mouse.set_visible(False)
 
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_a:
-                    x -= player_v
-                elif event.key == pygame.K_w:
-                    y -= player_v
-                elif event.key == pygame.K_d:
-                    x += player_v
-                elif event.key == pygame.K_s:
-                    y += player_v
-                if event.key == pygame.K_LEFT:
-                    if current_weapon in bows:
-                        Shot(player.rect.x - 39, player.rect.y + 13, -shot_v, 0, 270)
-                    elif current_weapon in swords and len(melee_group.sprites()) == 0:
-                        melee = Melee(player.rect.x - 39, player.rect.y + 13, current_weapon, 180)
-                elif event.key == pygame.K_RIGHT:
-                    if current_weapon in bows:
-                        Shot(player.rect.x + 60, player.rect.y + 13, shot_v, 0, 90)
-                    elif current_weapon in swords and len(melee_group.sprites()) == 0:
-                        melee = Melee(player.rect.x + 60, player.rect.y + 13, current_weapon, 0)
-                elif event.key == pygame.K_UP:
-                    if current_weapon in bows:
-                        Shot(player.rect.x + 12, player.rect.y - 36, 0, -shot_v, 180)
-                    elif current_weapon in swords and len(melee_group.sprites()) == 0:
-                        melee = Melee(player.rect.x + 12, player.rect.y - 36, current_weapon, 90)
-                elif event.key == pygame.K_DOWN:
-                    if current_weapon in bows:
-                        Shot(player.rect.x + 12, player.rect.y + 69, 0, shot_v, 0)
-                    elif current_weapon in swords and len(melee_group.sprites()) == 0:
-                        melee = Melee(player.rect.x + 12, player.rect.y + 69, current_weapon, 270)
+                player_x, player_y = dungeon.render()
+                player = Player(8, 2, player_x, player_y, change_mode)
+                x, y = 0, 0
+                player_v = 6
+                heath = HealthPoints()
 
-                elif event.key == pygame.K_r:
-                    [s.kill() for s in all_sprites]
-                    dungeon = Dungeon(f'map0{map_number}.tmx')
-                    player_x, player_y = dungeon.render()
-                    player = Player(8, 2, player_x, player_y)
-                elif event.key == pygame.K_e:
-                    button = 'e'
-                elif event.key == pygame.K_1:
-                    choose_weapon(1)
-                elif event.key == pygame.K_2:
-                    choose_weapon(2)
+                for section in range(0, 3):
+                    cell = Inventory(section)
+                cell = Inventory(0, True)
+                WeaponInInventory(weapons_image.get('wooden_bow'), 0)
 
-            elif event.type == pygame.KEYUP:
-                if event.key == pygame.K_a:
-                    x += player_v
-                elif event.key == pygame.K_w:
-                    y += player_v
-                elif event.key == pygame.K_d:
-                    x -= player_v
-                elif event.key == pygame.K_s:
-                    y -= player_v
-                elif event.key == pygame.K_e:
-                    button = None
-        if (x, y) != (0, 0):
-            moving = True
-        if x < 0:
-            flip = True
-        elif x > 0:
-            flip = False
-
-        player.rect.x += x
-        player.rect.y += y
-        player_damage = player.update(x, y, flip)
-        if player_damage and not damage:
-            hp -= 1
-            damage = True
-            visible = False
-            if hp == 0:
+            if restart:
                 [s.kill() for s in all_sprites]
+                completed_levels.clear()
                 dungeon = Dungeon(f'map0{map_number}.tmx')
                 player_x, player_y = dungeon.render()
-                player = Player(8, 2, player_x, player_y)
+                player = Player(8, 2, player_x, player_y, change_mode)
                 hp = 4
+                completed_levels.clear()
                 flip = False
                 doors_close = False
                 damage = False
                 visible = True
-        shot_group.update(False)
-        melee_group.update()
-        doors_group.update(doors_close)
-        camera.update(player)
-        scripts_group.update()
-        rooms_group.update()
-        animated_sprites_group.update()
-        particle_group.update()
-        barriers_group.update()
-        enemy_group.update()
-        chest_group.update(button)
-        key_group.update()
-        if inventory[3] is not None:
-            hatch_group.update(button, True)
-        else:
-            hatch_group.update(button, False)
-        ladder_group.update(button)
-        for sprite in all_sprites:
-            camera.apply(sprite)
+                change_mode = False
+                restart = False
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_a:
+                        x -= player_v
+                    elif event.key == pygame.K_w:
+                        y -= player_v
+                    elif event.key == pygame.K_d:
+                        x += player_v
+                    elif event.key == pygame.K_s:
+                        y += player_v
+                    if event.key == pygame.K_LEFT:
+                        if current_weapon in bows:
+                            Shot(player.rect.x - 39, player.rect.y + 13, -shot_v, 0, 270)
+                        elif current_weapon in swords and len(melee_group.sprites()) == 0:
+                            Melee(player.rect.x - 39, player.rect.y + 13, current_weapon, 180)
+                    elif event.key == pygame.K_RIGHT:
+                        if current_weapon in bows:
+                            Shot(player.rect.x + 60, player.rect.y + 13, shot_v, 0, 90)
+                        elif current_weapon in swords and len(melee_group.sprites()) == 0:
+                            Melee(player.rect.x + 60, player.rect.y + 13, current_weapon, 0)
+                    elif event.key == pygame.K_UP:
+                        if current_weapon in bows:
+                            Shot(player.rect.x + 12, player.rect.y - 36, 0, -shot_v, 180)
+                        elif current_weapon in swords and len(melee_group.sprites()) == 0:
+                            Melee(player.rect.x + 12, player.rect.y - 36, current_weapon, 90)
+                    elif event.key == pygame.K_DOWN:
+                        if current_weapon in bows:
+                            Shot(player.rect.x + 12, player.rect.y + 69, 0, shot_v, 0)
+                        elif current_weapon in swords and len(melee_group.sprites()) == 0:
+                            Melee(player.rect.x + 12, player.rect.y + 69, current_weapon, 270)
+                    elif event.key == pygame.K_r:
+                        restart = True
+                    elif event.key == pygame.K_ESCAPE:
+                        [s.kill() for s in all_sprites]
+                        final = True
+                        FinalScreen(1, 1, 265, 0, game_over)
+                        FinalScreen(1, 1, 571, 400, player_dead)
+                        FinalScreen(6, 4, 500, 300, animated_slimes)
+                        FinalScreen(6, 4, 500, 400, animated_slimes, True)
+                    elif event.key == pygame.K_e:
+                        button = 'e'
+                    elif event.key == pygame.K_1:
+                        choose_weapon(1)
+                    elif event.key == pygame.K_2:
+                        choose_weapon(2)
 
-        tiles_group.draw(screen)
-        barriers_group.draw(screen)
-        if doors_close:
-            doors_group.draw(screen)
-        ladder_group.draw(screen)
-        melee_group.draw(screen)
-        chest_group.draw(screen)
-        hatch_group.draw(screen)
-        key_group.draw(screen)
-        animated_sprites_group.draw(screen)
-        enemy_group.draw(screen)
-        if damage:
-            frames += 1
-            if frames % 20 == 0:
-                visible = not visible
-            if frames == 100:
-                frames = 0
-                damage = False
-        if visible:
+                elif event.type == pygame.KEYUP and not change_mode:
+                    if event.key == pygame.K_a:
+                        x += player_v
+                    elif event.key == pygame.K_w:
+                        y += player_v
+                    elif event.key == pygame.K_d:
+                        x -= player_v
+                    elif event.key == pygame.K_s:
+                        y -= player_v
+                    elif event.key == pygame.K_e:
+                        button = None
+            if (x, y) != (0, 0):
+                moving = True
+            if x < 0:
+                flip = True
+            elif x > 0:
+                flip = False
+            if not final:
+                change_mode = False
+                player.rect.x += x
+                player.rect.y += y
+                player_damage = player.update(x, y, flip)
+                if player_damage and not damage:
+                    hp -= 1
+                    damage = True
+                    visible = False
+                    if hp == 0:
+                        restart = True
+                shot_group.update(False)
+                melee_group.update()
+                doors_group.update(doors_close)
+                camera.update(player)
+                scripts_group.update()
+                rooms_group.update()
+                particle_group.update()
+                barriers_group.update()
+                animated_sprites_group.update()
+                enemy_group.update()
+                bombs_group.update()
+                chest_group.update(button)
+                key_group.update()
+                if inventory[3] is not None:
+                    hatch_group.update(button, True)
+                else:
+                    hatch_group.update(button, False)
+                ladder_group.update(button)
+                for sprite in all_sprites:
+                    camera.apply(sprite)
+
+                tiles_group.draw(screen)
+                barriers_group.draw(screen)
+                animated_sprites_group.draw(screen)
+                if doors_close:
+                    doors_group.draw(screen)
+                ladder_group.draw(screen)
+                melee_group.draw(screen)
+                chest_group.draw(screen)
+                hatch_group.draw(screen)
+                key_group.draw(screen)
+                enemy_group.draw(screen)
+                bombs_group.draw(screen)
+                if damage:
+                    frames += 1
+                    if frames % 20 == 0:
+                        visible = not visible
+                    if frames == 100:
+                        frames = 0
+                        damage = False
+                if visible:
+                    player_group.draw(screen)
+                shot_group.draw(screen)
+                particle_group.draw(screen)
+                pygame.draw.rect(screen, pygame.Color((172, 50, 50)), (5, 0, 230, 48), 0)
+                pygame.draw.rect(screen, pygame.Color((0, 0, 0)), (55 + 45 * hp, 0, 45 * (4 - hp),
+                                                                   48), 0)
+                health_group.draw(screen)
+                button = None
+            else:
+                screen.fill('black')
+                animated_sprites_group.update()
+                animated_sprites_group.draw(screen)
+        else:
+            if len(player_group) == 0:
+                transit = True
+                ts = tile_width = tile_height = 64
+                castle = Castle(level)
+                player_x, player_y = castle.render()
+                player = MiniPlayer(8, 2, player_x, player_y)
+                player_v = 64
+            moving = False
+            x, y = 0, 0
+            if restart:
+                [sprite.kill() for sprite in all_sprites]
+                castle = Castle(level)
+                player_x, player_y = castle.render()
+                player = MiniPlayer(8, 2, player_x, player_y)
+                restart = False
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_a:
+                        x = -player_v
+                        flip = True
+                    elif event.key == pygame.K_w:
+                        y = -player_v
+                    elif event.key == pygame.K_d:
+                        x = player_v
+                        flip = False
+                    elif event.key == pygame.K_s:
+                        y = player_v
+                    elif event.key == pygame.K_r:
+                        restart = True
+            if (x, y) != (0, 0):
+                moving = True
+
+            player.rect.x += x
+            player.rect.y += y
+            player.update(x, y, flip, False)
+            slimes_group.update(x, y, flip)
+            tables_group.update(x, y, flip)
+            spikes_group.update()
+            mini_keys_group.update()
+            mini_doors_group.update()
+
+            tiles_group.draw(screen)
+            slimes_group.draw(screen)
+            tables_group.draw(screen)
+            mini_keys_group.draw(screen)
+            mini_doors_group.draw(screen)
             player_group.draw(screen)
-        shot_group.draw(screen)
-        particle_group.draw(screen)
-        pygame.draw.rect(screen, pygame.Color((172, 50, 50)), (5, 0, 230, 48), 0)
-        pygame.draw.rect(screen, pygame.Color((0, 0, 0)), (55 + 45 * hp, 0, 45 * (4 - hp), 48), 0)
-        health_group.draw(screen)
+            spikes_group.draw(screen)
+        if transit:
+            transition()
+            transit_time += 1
+            if transit_time == 20:
+                transit = False
+                transit_time = 0
         all_cells_group.draw(screen)
         weapon_group.draw(screen)
         clock.tick(FPS)
