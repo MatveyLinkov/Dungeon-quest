@@ -549,7 +549,7 @@ class Chest(pygame.sprite.Sprite):
                 self.count += 1
                 if self.count == 1:
                     getting_weapon()
-                    WeaponInInventory(sword, 1)
+                    WeaponInInventory(swords, 1)
             if button is None:
                 pass
 
