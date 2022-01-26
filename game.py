@@ -7,13 +7,13 @@ import pytmx
 
 
 pygame.init()
-start_size = start_width, start_height = 600, 600
+start_size = start_width, start_height = 1920, 1080
 startscreen = pygame.display.set_mode(start_size)
 map_number = '1'
 maps = {'map1.tmx': [23, (11, 8)], 'map2.tmx': [24, (10, 7)],
         'map3.tmx': [23, (12, 5)]}
 level = 'map' + map_number + '.tmx'
-size = width, height = 1280, 720
+size = width, height = 1980, 1080
 FPS = 60
 start_success = False
 clock = pygame.time.Clock()
@@ -138,11 +138,11 @@ def show_text(text, font, position):  # преобразование текст�
 
 def start_screen():  # начальный экран
     text = ['Dungeon quest', 'play', 'exit']
-    fon = pygame.transform.scale(load_image("start_fon.png"), (600, 600))
+    fon = pygame.transform.scale(load_image("start_fon.png"), (1920, 1080))
     startscreen.blit(fon, (0, 0))
-    coord_x = [70, 243, 250]
-    coord_y = [80, 430, 500]
-    fonts_size = [72, 58, 58]
+    coord_x = [500, 830, 850]
+    coord_y = [280, 680, 800]
+    fonts_size = [150, 100, 100]
     for elem in range(len(text)):
         font = [pygame.font.Font("fonts/Dirtchunk.otf", fonts_size[elem]),
             pygame.font.Font("fonts/jelani.otf", fonts_size[elem]),
@@ -153,9 +153,10 @@ def start_screen():  # начальный экран
             if event.type == pygame.QUIT:
                 terminate()
             if event.type == pygame.MOUSEBUTTONDOWN:
-                if 230 <= event.pos[0] <= 370 and 450 <= event.pos[1] <= 515:
+                print(event.pos)
+                if 830 <= event.pos[0] <= 1020 and 680 <= event.pos[1] <= 805:
                     return screen_with_levels()
-                if 230 <= event.pos[0] <= 370 and 516 <= event.pos[1] <= 581:
+                if 850 <= event.pos[0] <= 1040 and 840 <= event.pos[1] <= 905:
                     terminate()
         pygame.display.flip()
         clock.tick(50)
@@ -164,18 +165,18 @@ def start_screen():  # начальный экран
 def screen_with_levels():
     global map_number, start_success
     startscreen.fill(pygame.Color("black"))
-    fon = pygame.transform.scale(load_image("fon_lvl.png"), (600, 600))
+    fon = pygame.transform.scale(load_image("fon_lvl.png"), (1920, 1080))
     startscreen.blit(fon, (0, 0))
     images = ['fon1.png', 'analog_fon.png', 'dop_fon.png', 'fon3.png', 'fon2.png']
     for name in range(len(images)):
-        img = pygame.transform.scale(load_image(images[name]), (80, 80))
-        startscreen.blit(img, (40 + 110 * name, 25))
+        img = pygame.transform.scale(load_image(images[name]), (200, 200))
+        startscreen.blit(img, (40 + 210 * name, 25))
     text_level = ['1', '2', '3', '4', '5']
     for elem in range(len(text_level)):
-        font = pygame.font.Font("fonts/DS VTCorona Cyr.ttf", 56)
-        show_text(text_level[elem], font, (50 + 110 * elem, 30))
-    font = pygame.font.Font("fonts/jelani.otf", 58)
-    show_text('back', font, (15, 520))
+        font = pygame.font.Font("fonts/DS VTCorona Cyr.ttf", 90)
+        show_text(text_level[elem], font, (50 + 210 * elem, 30))
+    font = pygame.font.Font("fonts/jelani.otf", 90)
+    show_text('back', font, (15, 950))
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -185,18 +186,18 @@ def screen_with_levels():
                     home = True
                     start_screen()
                     return home
-                if 40 <= event.pos[0] <= 119 and 25 <= event.pos[1] <= 104:
+                if 40 <= event.pos[0] <= 240 and 25 <= event.pos[1] <= 225:
                     map_number = '1'
                     return
-                if 150 <= event.pos[0] <= 229 and 25 <= event.pos[1] <= 104:
+                if 280 <= event.pos[0] <= 480 and 25 <= event.pos[1] <= 225:
                     map_number = '2'
                     return
-                if 260 <= event.pos[0] <= 339 and 25 <= event.pos[1] <= 104:
+                if 520 <= event.pos[0] <= 720 and 25 <= event.pos[1] <= 225:
                     map_number = '3'
                     return
-                if 370 <= event.pos[0] <= 449 and 25 <= event.pos[1] <= 104:
+                if 760 <= event.pos[0] <= 960 and 25 <= event.pos[1] <= 225:
                     pass
-                if 480 <= event.pos[0] <= 559 and 25 <= event.pos[1] <= 104:
+                if 1000 <= event.pos[0] <= 1300 and 25 <= event.pos[1] <= 225:
                     pass
         pygame.display.flip()
         clock.tick(50)
