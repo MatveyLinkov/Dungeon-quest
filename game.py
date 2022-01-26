@@ -278,8 +278,8 @@ class Dungeon:
                         elif self.get_tile_id((x, y), i) - 100 == chest or \
                                 self.get_tile_id((x, y), i) == chest:
                             Chest(x, y)
-                        elif self.get_tile_id((x, y), i) == key or \
-                                self.get_tile_id((x, y), i) - 100 == key:
+                        elif (self.get_tile_id((x, y), i) == key or
+                              self.get_tile_id((x, y), i) - 100 == key):
                             Key(x, y)
                         elif self.get_tile_id((x, y), i) == 81 or \
                                 self.get_tile_id((x, y), i) - 100 == 81:
@@ -376,6 +376,8 @@ class Key(pygame.sprite.Sprite):
             inventory[3] = 'key'
             WeaponInInventory(key_inventory, 2)
             self.kill()
+        if not pygame.sprite.spritecollideany(self, rooms_group):
+            self.kill()
 
 
 class AnimatedSprite(pygame.sprite.Sprite):
@@ -459,7 +461,8 @@ class Room(pygame.sprite.Sprite):
     def update(self):
         global doors_close
         if pygame.sprite.spritecollideany(self, player_group):
-            if not pygame.sprite.spritecollideany(self, enemy_group):
+            if not pygame.sprite.spritecollideany(self, enemy_group) and not\
+                    pygame.sprite.spritecollideany(self, key_group):
                 doors_close = False
                 self.kill()
                 completed_levels.append(self.name)
@@ -1254,7 +1257,7 @@ if __name__ == '__main__':
                     elif event.key == pygame.K_2:
                         choose_weapon(2)
 
-                elif event.type == pygame.KEYUP and not change_mode:
+                elif event.type == pygame.KEYUP and(x, y) != (0, 0):
                     if event.key == pygame.K_a:
                         x += player_v
                     elif event.key == pygame.K_w:
