@@ -7,6 +7,8 @@ import pytmx
 
 
 pygame.init()
+pygame.mixer.music.load('music/intro.mp3')
+pygame.mixer.music.play()
 start_size = start_width, start_height = 1920, 1080
 startscreen = pygame.display.set_mode(start_size)
 map_number = '1'
@@ -47,6 +49,8 @@ spikes_group = pygame.sprite.Group()
 mini_player_group = pygame.sprite.Group()
 mini_keys_group = pygame.sprite.Group()
 mini_doors_group = pygame.sprite.Group()
+all_cells_group = pygame.sprite.Group()
+weapon_group = pygame.sprite.Group()
 
 
 def load_image(name, colorkey=None):
@@ -71,6 +75,9 @@ player_sheet = pygame.transform.scale(load_image('knight_sheet.png'), (552, 150)
 skull_sheet = load_image('skull_sheet.png')
 goblin_sheet = load_image('goblin_spritesheet.png')
 bomber_sheet = pygame.transform.scale(load_image('bomber_spritesheet.png'), (288, 48))
+cell_image = pygame.transform.scale(load_image('inventory_cell.png'), (50, 50))
+choose_cell = pygame.transform.scale(load_image('active_cell.png'), (50, 50))
+key_inventory = pygame.transform.scale(load_image('key_inv.png'), (20, 38))
 opened_chest = load_image('chest_open_anim_3.png')
 closed_chest = load_image('chest_open_anim_1.png')
 key_image = load_image('key.png')
@@ -90,12 +97,13 @@ doors = [37, 38, 39, 40, 47, 48, 49, 50, 57, 58, 59, 60, 67, 68]
 barriers = [44, 45, 53, 54]
 animated_sprites = {75: 'flag_sheet.png',
                     91: 'torch_sheet.png', 94: 'candle_sheet.png'}
-weapons_image = {'wooden_bow': pygame.transform.scale(load_image('wooden_bow.png'), (48, 48)),
+weapons_image = {'wooden_bow': load_image('wooden_bow.png'),
                  'iron_sword':
-                     pygame.transform.scale(load_image('slash_effect_anim.png'), (259, 86))}
+                     pygame.transform.scale(load_image('iron_sword.png'), (20, 42))}
 weapons = ['wooden_bow', 'iron_sword']
 bows = ['wooden_bow']
 swords = ['iron_sword']
+splash_effect = load_image('slash_effect_anim.png')
 inventory = {1: 'wooden_bow', 2: None, 3: None}
 current_weapon = inventory[1]
 ts = tile_width = tile_height = 48
@@ -113,17 +121,18 @@ def getting_weapon():
     global current_weapon, inventory
     new_weapon = random.choice(weapons[1:])
     inventory[2] = new_weapon
+    WeaponInInventory(weapons_image[new_weapon], 1)
 
 
 def choose_weapon(button):
     global current_weapon
     if button == 1:
         current_weapon = inventory[1]
+        Inventory(0, True)
     elif button == 2:
+        Inventory(1, True)
         if len(inventory) >= 2:
             current_weapon = inventory[2]
-        else:
-            pass
 
 
 def pickup_key():
@@ -145,8 +154,8 @@ def start_screen():  # начальный экран
     fonts_size = [150, 100, 100]
     for elem in range(len(text)):
         font = [pygame.font.Font("fonts/Dirtchunk.otf", fonts_size[elem]),
-            pygame.font.Font("fonts/jelani.otf", fonts_size[elem]),
-            pygame.font.Font("fonts/jelani.otf", fonts_size[elem])]
+                pygame.font.Font("fonts/jelani.otf", fonts_size[elem]),
+                pygame.font.Font("fonts/jelani.otf", fonts_size[elem])]
         show_text(text[elem], font[elem], (coord_x[elem], coord_y[elem]))
     while True:
         for event in pygame.event.get():
@@ -365,6 +374,7 @@ class Key(pygame.sprite.Sprite):
     def update(self):
         if pygame.sprite.spritecollideany(self, player_group):
             inventory[3] = 'key'
+            WeaponInInventory(key_inventory, 2)
             self.kill()
 
 
@@ -503,7 +513,7 @@ class Melee(pygame.sprite.Sprite):
     def __init__(self, x, y, weapon, angle):
         super().__init__(melee_group)
         self.frames = []
-        self.crop_sheet(weapons_image[weapon], 3, 1)
+        self.crop_sheet(splash_effect, 3, 1)
         self.cur_frame = 0
         self.image = self.frames[self.cur_frame]
         self.angle = angle
@@ -614,8 +624,6 @@ class Chest(pygame.sprite.Sprite):
                 self.count += 1
                 if self.count == 1:
                     getting_weapon()
-            if button is None:
-                pass
 
 
 class Shot(pygame.sprite.Sprite):
@@ -868,7 +876,7 @@ class Bomb(pygame.sprite.Sprite):
         self.image = self.frames[self.cur_frame]
         self.rect = self.image.get_rect()
         self.rect = self.rect.move(pos_x + 48, pos_y)
-        self.speed = 8
+        self.speed = 12
 
     def crop_sheet(self, sheet, columns, rows):
         self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
@@ -900,6 +908,26 @@ class HealthPoints(pygame.sprite.Sprite):
         super().__init__(health_group)
         self.image = load_image('health_ui.png')
         self.rect = self.image.get_rect()
+
+
+class Inventory(pygame.sprite.Sprite):
+    def __init__(self, section, active=False):
+        super().__init__(all_cells_group)
+        if active:
+            self.image = choose_cell
+            Inventory((section + 3) % 2)
+        else:
+            self.image = cell_image
+        self.rect = self.image.get_rect()
+        self.rect = self.rect.move(1770 + section * tile_width, 0)
+
+
+class WeaponInInventory(pygame.sprite.Sprite):
+    def __init__(self, weapon, section):
+        super().__init__(weapon_group)
+        self.image = weapon
+        self.rect = self.image.get_rect()
+        self.rect = self.rect.move(1785 + 50 * section, 5)
 
 
 class MiniPlayer(pygame.sprite.Sprite):
@@ -1099,6 +1127,7 @@ def draw(screen, text, position, color):
 
 if __name__ == '__main__':
     pygame.display.set_caption('Dungeon Quest: beta')
+
     dungeon_map = True
     x, y = 0, 0
     player_v = 6
@@ -1109,6 +1138,7 @@ if __name__ == '__main__':
     start_screen()
     screen = pygame.display.set_mode(size)
     camera = Camera()
+    clock = pygame.time.Clock()
     button = None
     moving = False
     flip = False
@@ -1125,30 +1155,64 @@ if __name__ == '__main__':
         moving = False
         if dungeon_map:
             if len(player_group) == 0:
-                transit = True
-                ts = tile_width = tile_height = 48
-                dungeon = Dungeon(f'map0{map_number}.tmx')
-                pygame.mouse.set_visible(False)
+                if map_number != '4':
+                    transit = True
+                    ts = tile_width = tile_height = 48
+                    dungeon = Dungeon(f'map0{map_number}.tmx')
+                    pygame.mouse.set_visible(False)
 
-                player_x, player_y = dungeon.render()
-                player = Player(8, 2, player_x, player_y, change_mode)
-                x, y = 0, 0
-                player_v = 6
-                heath = HealthPoints()
+                    player_x, player_y = dungeon.render()
+                    player = Player(8, 2, player_x, player_y, change_mode)
+                    x, y = 0, 0
+                    player_v = 6
+                    heath = HealthPoints()
+                    choose_weapon(1)
+                    for section in range(0, 3):
+                        cell = Inventory(section)
+                    cell = Inventory(0, True)
+                    WeaponInInventory(weapons_image.get('wooden_bow'), 0)
+                    pygame.mixer.music.load('music/dungeon.mp3')
+                    pygame.mixer.music.play(-1)
+                    pygame.mixer.music.set_volume(0.3)
+
             if restart:
-                [s.kill() for s in all_sprites]
-                completed_levels.clear()
-                dungeon = Dungeon(f'map0{map_number}.tmx')
-                player_x, player_y = dungeon.render()
-                player = Player(8, 2, player_x, player_y, change_mode)
-                hp = 4
-                completed_levels.clear()
-                flip = False
-                doors_close = False
-                damage = False
-                visible = True
-                change_mode = False
-                restart = False
+                if map_number != '4':
+                    [s.kill() for s in all_sprites]
+                    [s.kill() for s in weapon_group]
+                    completed_levels.clear()
+                    dungeon = Dungeon(f'map0{map_number}.tmx')
+                    player_x, player_y = dungeon.render()
+                    player = Player(8, 2, player_x, player_y, change_mode)
+                    hp = 4
+                    completed_levels.clear()
+                    inventory = {1: 'wooden_bow', 2: None, 3: None}
+                    flip = False
+                    doors_close = False
+                    damage = False
+                    visible = True
+                    change_mode = False
+                    restart = False
+                    transit = True
+                    for section in range(0, 3):
+                        cell = Inventory(section)
+                    cell = Inventory(0, True)
+                    WeaponInInventory(weapons_image.get('wooden_bow'), 0)
+                else:
+                    if not final:
+                        final = True
+                        [s.kill() for s in all_sprites]
+                        FinalScreen(1, 1, 265, 0, game_over)
+                        # FinalScreen(8, 1, 571, 400, player_win)
+                        # for i in range(3):
+                        #    FinalScreen(1, 1, bags_coord[i][0], bags_coord[i][1], bag_coins)
+                        #    FinalScreen(1, 1, golden_chest_coord[i][0],
+                        #                golden_chest_coord[i][1], golden_chest)
+                        pygame.mixer.music.load('music/bad_end.mp3')
+                        # pygame.mixer.music.load('music/good_end.mp3')
+                        pygame.mixer.music.play()
+                        FinalScreen(1, 1, 571, 400, player_dead)
+                        FinalScreen(6, 4, 500, 300, animated_slimes)
+                        FinalScreen(6, 4, 500, 400, animated_slimes, True)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
@@ -1183,13 +1247,6 @@ if __name__ == '__main__':
                             Melee(player.rect.x + 12, player.rect.y + 69, current_weapon, 270)
                     elif event.key == pygame.K_r:
                         restart = True
-                    elif event.key == pygame.K_ESCAPE:
-                        [s.kill() for s in all_sprites]
-                        final = True
-                        FinalScreen(1, 1, 265, 0, game_over)
-                        FinalScreen(1, 1, 571, 400, player_dead)
-                        FinalScreen(6, 4, 500, 300, animated_slimes)
-                        FinalScreen(6, 4, 500, 400, animated_slimes, True)
                     elif event.key == pygame.K_e:
                         button = 'e'
                     elif event.key == pygame.K_1:
@@ -1206,8 +1263,6 @@ if __name__ == '__main__':
                         x -= player_v
                     elif event.key == pygame.K_s:
                         y -= player_v
-                    elif event.key == pygame.K_e:
-                        button = None
             if (x, y) != (0, 0):
                 moving = True
             if x < 0:
@@ -1273,11 +1328,9 @@ if __name__ == '__main__':
                 pygame.draw.rect(screen, pygame.Color((0, 0, 0)), (55 + 45 * hp, 0, 45 * (4 - hp),
                                                                    48), 0)
                 health_group.draw(screen)
+                all_cells_group.draw(screen)
+                weapon_group.draw(screen)
                 button = None
-            else:
-                screen.fill('black')
-                animated_sprites_group.update()
-                animated_sprites_group.draw(screen)
         else:
             if len(player_group) == 0:
                 transit = True
@@ -1286,6 +1339,9 @@ if __name__ == '__main__':
                 player_x, player_y = castle.render()
                 player = MiniPlayer(8, 2, player_x, player_y)
                 player_v = 64
+                pygame.mixer.music.load('music/castle.mp3')
+                pygame.mixer.music.play(-1)
+                pygame.mixer.music.set_volume(0.3)
             moving = False
             x, y = 0, 0
             if restart:
@@ -1330,6 +1386,10 @@ if __name__ == '__main__':
             mini_doors_group.draw(screen)
             player_group.draw(screen)
             spikes_group.draw(screen)
+        if final:
+            screen.fill('black')
+            animated_sprites_group.update()
+            animated_sprites_group.draw(screen)
         if transit:
             transition()
             transit_time += 1
