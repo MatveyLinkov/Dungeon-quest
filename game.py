@@ -15,9 +15,10 @@ map_number = '1'
 maps = {'map1.tmx': [23, (11, 8)], 'map2.tmx': [24, (10, 7)],
         'map3.tmx': [23, (12, 5)]}
 level = 'map' + map_number + '.tmx'
-size = width, height = 1980, 1080
+size = width, height = 1920, 1080
 FPS = 60
 start_success = False
+next_level = False
 clock = pygame.time.Clock()
 MAPS_DIR = 'levels'
 final = False
@@ -139,10 +140,10 @@ def pickup_key():
     pass
 
 
-def show_text(text, font, position):  # преобразование текста
+def show_text(screen, text, font, position):  # преобразование текста
     font_color = pygame.Color("orange")
     text = font.render(text, 1, font_color)  # передаём строку для экрана, затем сглаживание, цвет
-    startscreen.blit(text, position)
+    screen.blit(text, position)
 
 
 def start_screen():  # начальный экран
@@ -156,58 +157,16 @@ def start_screen():  # начальный экран
         font = [pygame.font.Font("fonts/Dirtchunk.otf", fonts_size[elem]),
                 pygame.font.Font("fonts/jelani.otf", fonts_size[elem]),
                 pygame.font.Font("fonts/jelani.otf", fonts_size[elem])]
-        show_text(text[elem], font[elem], (coord_x[elem], coord_y[elem]))
+        show_text(startscreen, text[elem], font[elem], (coord_x[elem], coord_y[elem]))
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
             if event.type == pygame.MOUSEBUTTONDOWN:
-                print(event.pos)
                 if 830 <= event.pos[0] <= 1020 and 680 <= event.pos[1] <= 805:
-                    return screen_with_levels()
+                    return
                 if 850 <= event.pos[0] <= 1040 and 840 <= event.pos[1] <= 905:
                     terminate()
-        pygame.display.flip()
-        clock.tick(50)
-
-
-def screen_with_levels():
-    global map_number, start_success
-    startscreen.fill(pygame.Color("black"))
-    fon = pygame.transform.scale(load_image("fon_lvl.png"), (1920, 1080))
-    startscreen.blit(fon, (0, 0))
-    images = ['fon1.png', 'analog_fon.png', 'dop_fon.png', 'fon3.png', 'fon2.png']
-    for name in range(len(images)):
-        img = pygame.transform.scale(load_image(images[name]), (200, 200))
-        startscreen.blit(img, (40 + 210 * name, 25))
-    text_level = ['1', '2', '3', '4', '5']
-    for elem in range(len(text_level)):
-        font = pygame.font.Font("fonts/DS VTCorona Cyr.ttf", 90)
-        show_text(text_level[elem], font, (50 + 210 * elem, 30))
-    font = pygame.font.Font("fonts/jelani.otf", 90)
-    show_text('back', font, (15, 950))
-    while True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                terminate()
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                if 3 <= event.pos[0] <= 128 and 538 <= event.pos[1] <= 597:
-                    home = True
-                    start_screen()
-                    return home
-                if 40 <= event.pos[0] <= 240 and 25 <= event.pos[1] <= 225:
-                    map_number = '1'
-                    return
-                if 280 <= event.pos[0] <= 480 and 25 <= event.pos[1] <= 225:
-                    map_number = '2'
-                    return
-                if 520 <= event.pos[0] <= 720 and 25 <= event.pos[1] <= 225:
-                    map_number = '3'
-                    return
-                if 760 <= event.pos[0] <= 960 and 25 <= event.pos[1] <= 225:
-                    pass
-                if 1000 <= event.pos[0] <= 1300 and 25 <= event.pos[1] <= 225:
-                    pass
         pygame.display.flip()
         clock.tick(50)
 
@@ -503,6 +462,7 @@ class Ladder(pygame.sprite.Sprite):
         self.rect = self.rect.move(tile_width * pos_x, tile_height * pos_y)
 
     def update(self, button):
+        global next_level
         global map_number, restart, transit
         if button == 'e':
             if pygame.sprite.spritecollideany(self, player_group) and self.count == 0:
@@ -510,6 +470,7 @@ class Ladder(pygame.sprite.Sprite):
                 map_number = str(int(map_number) + 1)
                 restart = True
                 transit = True
+                next_level = True
 
 
 class Melee(pygame.sprite.Sprite):
@@ -1106,12 +1067,30 @@ class Camera:
         self.dy = height // 2 - target.rect.y - target.rect.h // 2
 
 
+def statistics():
+    global count
+    count += 1
+    if count == 60:
+        count = 0
+        timer[1] += 1
+        if timer[1] == 60:
+            timer[1] = 0
+            timer[0] += 1
+
+
 def transition():
     screen.fill(pygame.Color(0, 0, 0))
+    if next_level is True:
+        text = [f"Уровень: {str(int(map_number) - 1)}",
+                f"Время: {timer[0]}: {timer[1]}",
+                f"Кол-во пройденных мини-игр: {minigame_count}"]
+        font = pygame.font.Font("fonts/jelani.otf", 50)
+        for i in range(len(text)):
+            show_text(screen, text[i], font, (25, 210 * i))
 
 
 def draw(screen, text, position, color):
-    global restart, dungeon_map
+    global restart, dungeon_map, minigame_count
     if text == 0:
         text = 'X'
     elif text < 0:
@@ -1119,6 +1098,7 @@ def draw(screen, text, position, color):
     if position == maps[level][1] and text != -1:
         text = ''
         [s.kill() for s in all_sprites]
+        minigame_count += 1
         dungeon_map = True
     screen.fill((0, 0, 0))
     font = pygame.font.Font(None, 50)
@@ -1130,7 +1110,6 @@ def draw(screen, text, position, color):
 
 if __name__ == '__main__':
     pygame.display.set_caption('Dungeon Quest: beta')
-
     dungeon_map = True
     x, y = 0, 0
     player_v = 6
@@ -1138,6 +1117,9 @@ if __name__ == '__main__':
     hp = 4
     frames = 0
     chest_opened_count = 0
+    minigame_count = 0
+    count = 0
+    timer = [0, 0]
     start_screen()
     screen = pygame.display.set_mode(size)
     camera = Camera()
@@ -1154,6 +1136,8 @@ if __name__ == '__main__':
     transit_time = 0
     running = True
     while running:
+        statistics()
+        print(timer)
         screen.fill(pygame.Color((37, 19, 26)))
         moving = False
         if dungeon_map:
@@ -1163,7 +1147,6 @@ if __name__ == '__main__':
                     ts = tile_width = tile_height = 48
                     dungeon = Dungeon(f'map0{map_number}.tmx')
                     pygame.mouse.set_visible(False)
-
                     player_x, player_y = dungeon.render()
                     player = Player(8, 2, player_x, player_y, change_mode)
                     x, y = 0, 0
@@ -1177,7 +1160,6 @@ if __name__ == '__main__':
                     pygame.mixer.music.load('music/dungeon.mp3')
                     pygame.mixer.music.play(-1)
                     pygame.mixer.music.set_volume(0.3)
-
             if restart:
                 if map_number != '4':
                     [s.kill() for s in all_sprites]
@@ -1257,7 +1239,7 @@ if __name__ == '__main__':
                     elif event.key == pygame.K_2:
                         choose_weapon(2)
 
-                elif event.type == pygame.KEYUP and(x, y) != (0, 0):
+                elif event.type == pygame.KEYUP:
                     if event.key == pygame.K_a:
                         x += player_v
                     elif event.key == pygame.K_w:
@@ -1396,9 +1378,14 @@ if __name__ == '__main__':
         if transit:
             transition()
             transit_time += 1
-            if transit_time == 20:
+            if transit_time == 20 and next_level is False:
                 transit = False
                 transit_time = 0
+            if transit_time == 200 and next_level is True:
+                transit = False
+                transit_time = 0
+                next_level = False
+                timer = [0, 0]
         clock.tick(FPS)
         pygame.display.flip()
     pygame.quit()
