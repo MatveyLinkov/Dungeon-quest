@@ -15,7 +15,7 @@ map_number = '1'
 maps = {'map1.tmx': [23, (11, 8)], 'map2.tmx': [24, (10, 7)],
         'map3.tmx': [23, (12, 5)]}
 level = 'map' + map_number + '.tmx'
-size = width, height = 1920, 1080
+size = width, height = 1280, 720
 FPS = 60
 start_success = False
 next_level = False
@@ -1137,7 +1137,6 @@ if __name__ == '__main__':
     running = True
     while running:
         statistics()
-        print(timer)
         screen.fill(pygame.Color((37, 19, 26)))
         moving = False
         if dungeon_map:
@@ -1147,9 +1146,9 @@ if __name__ == '__main__':
                     ts = tile_width = tile_height = 48
                     dungeon = Dungeon(f'map0{map_number}.tmx')
                     pygame.mouse.set_visible(False)
+                    x, y = 0, 0
                     player_x, player_y = dungeon.render()
                     player = Player(8, 2, player_x, player_y, change_mode)
-                    x, y = 0, 0
                     player_v = 6
                     heath = HealthPoints()
                     choose_weapon(1)
@@ -1162,6 +1161,7 @@ if __name__ == '__main__':
                     pygame.mixer.music.set_volume(0.3)
             if restart:
                 if map_number != '4':
+                    x, y = 0, 0
                     [s.kill() for s in all_sprites]
                     [s.kill() for s in weapon_group]
                     completed_levels.clear()
@@ -1184,6 +1184,7 @@ if __name__ == '__main__':
                     WeaponInInventory(weapons_image.get('wooden_bow'), 0)
                 else:
                     if not final:
+                        x, y = 0, 0
                         final = True
                         [s.kill() for s in all_sprites]
                         FinalScreen(1, 1, 265, 0, game_over)
@@ -1239,7 +1240,7 @@ if __name__ == '__main__':
                     elif event.key == pygame.K_2:
                         choose_weapon(2)
 
-                elif event.type == pygame.KEYUP:
+                elif event.type == pygame.KEYUP and not transit:
                     if event.key == pygame.K_a:
                         x += player_v
                     elif event.key == pygame.K_w:
