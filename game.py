@@ -1139,6 +1139,7 @@ def move_count(screen, text, position, color):
 
 if __name__ == '__main__':
     pygame.display.set_caption('Dungeon Quest')
+    pygame.display.set_icon(load_image('icon.ico'))
     dungeon_map = True
     x, y = 0, 0
     player_v = 6
