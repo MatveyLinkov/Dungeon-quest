@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="93" height="93" tilewidth="48" tileheight="48" infinite="0" nextlayerid="7" nextobjectid="35">
+ <tileset firstgid="1" source="../data/dungeon_tileset1.tsx"/>
+ <tileset firstgid="101" source="../data/castle_tileset.tsx"/>
+ <tileset firstgid="173" source="../data/castle_tileset.tsx"/>
+ <layer id="1" name="Слой тайлов 1" width="93" height="93">
+  <data encoding="base64" compression="zlib">
+   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
+  </data>
+ </layer>
+ <layer id="3" name="Слой тайлов 2" width="93" height="93">
+  <data encoding="base64" compression="zlib">
+   eJztXU1v2zAM1ZK2l1166WWXXfaBNcmwD6ADtt22+/7/v5kFmBjjip0IPiosxAcQsRNbZmiGohQ+666Usltkv8jVKnX/mm3v2PZ+/YzkzSJ/HOTFeq29cO2rdb9efyRIr5atSDey175xTNX39WCd0bgZfD2rvW4XeYlQ5IK4HXw9q81fFbvNPWNL73cYiV69JFQfQdw3D/TqNdrmVh+tNr8DtOGBXr1Gx3OEn1vvm9d37tVrdDy3+miNxdb75pWr9eo12s+tNq/6WuP5pW0+2s8R8dzq515+1usLz9HmVj/3svmHRY6LHBY5se37df9+lY9O15dg9dGaZ0XNFaMC0Ydafytpcx1uAG2MjqeXBqL/Q4z9ZwLCR9PPdbDaq8bimh9QHnBcXx8WebvIOybvF/la/uUNh1VG5w2XBuVTXJ6yV/28x15SzJqtv+yF5Psae0k2ny1290Kylybups118LT56Pmk5wIptmh8FNHGTJDspfFzKWdPP28DYS9pDib9vA3JXpq8RfqtpJ+3gfBzqY3Zxpy9kPxcYy9EGzPBsw/NcWgbiDwvba4DYjyD6IdnAiLnyPxcB4SPps11QNg857h0kHxUYy/pvqWft4GYV8xxqA6I/Dxjiw6esSVzxTYQcQERn2aCdkxUfxfE9eK8r9b/2Jy3Rpw2L9+/K4/5Z8Q94zw60mlfznl2nnptOYV1v2Uv0ou/Rq6FRvDTPICoB0LU9nogaq0TgiNR29gZ2/BAVJsj6rii1p9HjXkIDldt42Bog/o4zl/n3Gzqa+h9Ova6nHOzd5vjLb+9Us7zga0+W154i0NOenLOO51rAaJG9JPxfAmfjedH1Ytii8Wnvhh1kPDTeH5UvRA1/1G/W1S9KJ6fDG1E/W5R9UJwFb8bz5fww3h+VL2oD7XE81rXTjXtxB2o25xbeGy8d2LbdAyvjX8w6ER6EYeBrn3abJPQcfQ+3z5ujrPqheCee409ovL5UGMiSzyPPPbwAMIXoo5Do9o8wnOKIs8leQAxJ8F5c7yf+B8PjPoZL94c6bXt66jfpb6Q8/95P+mpF/Hl6NqSvb6xY0l/LW8u/ydqI2stxgNRx5z/++vgybNIm7eBsFfGFh0Qfp48Cx0Q9foZz3VA5HnJ4dIBwe1EPKdhJiDy83yWiA4IPlHyLHRA1EJnfq4DIi5krqgDIi5kPNcBERfymTk6ePL908/b8HyuRfp5G54cruxD20DMlSDu20zwnG/J2NIGYl4xnyUig9Y+4/Xqdf9XOf8P+nd5XI9fj6fn/G/r4J9qg9fRV5nN9xH1QFFriqIiAm9utniDeF581DWhogJRI5rP+dcBsbZCVE5gVCBsHnVNqKiIkLfM1odGWG9utvmA7EPHA1EXn/m5DojcOv1chwjcltnylghrn81mc0TOgeiHZ0KE+ZbZckVEbCEeGPHOtnxtvlYtX5+W9mdeb45z9ji3vsV55/b6C7giT6U=
+  </data>
+ </layer>
+ <layer id="4" name="Слой тайлов 3" width="93" height="93">
+  <data encoding="base64" compression="zlib">
+   eJzt20sKwjAUBdBsTcGRICgqiOCs+99CR4IOqmnrM2lzzrBpwyUp/YSXlN7t02ff2iHCpnSAxu0yzzuEpuApdz6gRu7f5TBX9TqVDrAwt9IBAABeXEoHaNR1wjXbn6cAAAAAAAAAAGjTY+TxKEvYn9al/PFS3zLPmH1w6r7KmFL3RR2in+9T+//3eydXrbmo17l0AIAVafW7pQvuHyCSNbFhQ+uf/jsBAAAAAAAAYP3uM9sBAIA4x9IBAAAAAvWlUwxe
+  </data>
+ </layer>
+ <layer id="5" name="Слой тайлов 4" width="93" height="93">
+  <data encoding="base64" compression="zlib">
+   eJzt201ugzAQhuG5YW9Bd+2iF5gb0OwSDtEzBqtYcSgY/O+o7yNZQRCB88UMJMIiAADgMrdpbuPyivJMzt/Lss3/6qxDfpM8xvforL/J73eAvMxYNjnfdrZPnm2Ic5SnGefjwXsQ5urZZr4Prqn5reu1vW7aGs91NC+T57q2mHUXIetS7FimXtfHmAYAAAAAAAAAAAAAAACQw9uq9Uo9zTXU6lCCkMxbfJ6PuX0uy7rRWkrJ40zmQ+IxclH5m/VX/W7I+9JSbGXeQ8a9Ss18b5xrwj7/M/OMtO+Z3Ve6hhqvcO6ZeS9H8416z1zlkbmdN9J6vk6pem78JO43B5XnzI3Wz9uXque9UGfZzttpPfcy133iVuaauP9UKvvX8lb9Cr033ernUeYaeIwWtHUHPPZ+2/RcWyz3N+maSp3cQ84tX82Pqeca8N4YpfcfS+V87nuZx9yfq9TJPOYYpWu8ynPffOfenrOZ60YrLeRYg9T5T0ilbgYAAAAAAAAAAAAAAAAAAAAAAAAAAACuO2WcVxk=
+  </data>
+ </layer>
+ <objectgroup id="6" name="Слой объектов 1">
+  <object id="1" name="Skull" type="enemy" x="3890" y="1975" width="41" height="38"/>
+  <object id="2" name="Skull" type="enemy" x="3793" y="2402" width="44" height="42"/>
+  <object id="3" name="Skull" type="enemy" x="4232" y="2072" width="35" height="36"/>
+  <object id="4" name="Player" type="player" x="3992" y="3941.33" width="36" height="34.6667"/>
+  <object id="7" name="Goblin" type="enemy" x="2020" y="1970.67" width="42" height="40.6667"/>
+  <object id="8" name="Goblin" type="enemy" x="2117.67" y="2497.67" width="43.3333" height="42.6667"/>
+  <object id="9" name="Goblin" type="enemy" x="2160" y="2352.5" width="44" height="44"/>
+  <object id="11" name="Skull" type="enemy" x="4237" y="444" width="27" height="28"/>
+  <object id="12" name="Goblin" type="enemy" x="3900" y="396" width="28" height="28"/>
+  <object id="13" name="Goblin" type="enemy" x="4325" y="630" width="40" height="35"/>
+  <object id="14" name="Bomber" type="enemy" x="96.6667" y="2018" width="43.3333" height="44"/>
+  <object id="15" name="Bomber" type="enemy" x="97.3333" y="2210" width="44.6667" height="42"/>
+  <object id="16" name="Bomber" type="enemy" x="96" y="2400" width="46.6667" height="47.3333"/>
+  <object id="17" name="Skull" type="enemy" x="529.5" y="2018.5" width="45" height="44"/>
+  <object id="18" name="Goblin" type="enemy" x="340.667" y="2072.33" width="34.6667" height="29.3333"/>
+  <object id="19" name="Goblin" type="enemy" x="439.333" y="2454.67" width="35" height="36"/>
+  <object id="20" name="1" type="room" x="3688" y="44" width="732" height="728"/>
+  <object id="21" name="1" type="script" x="3938" y="650" width="241" height="47"/>
+  <object id="22" name="4" type="room" x="3696" y="1868" width="722" height="722"/>
+  <object id="23" name="4" type="script" x="3936" y="2472.67" width="241.333" height="46"/>
+  <object id="25" name="3" type="room" x="1870" y="1870" width="722" height="720"/>
+  <object id="26" name="3" type="script" x="2475.67" y="2112.67" width="46.6667" height="238.667"/>
+  <object id="27" name="2" type="room" x="48" y="1872" width="724" height="720"/>
+  <object id="28" name="2" type="script" x="653.33" y="2113" width="48" height="238"/>
+  <object id="34" name="???" type="???" x="1973.33" y="147.333" width="234" height="230"/>
+ </objectgroup>
+</map>

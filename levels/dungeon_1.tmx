@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="93" height="93" tilewidth="48" tileheight="48" infinite="0" nextlayerid="9" nextobjectid="26">
+ <tileset firstgid="1" source="../data/dungeon_tileset1.tsx"/>
+ <tileset firstgid="101" source="../data/castle_tileset.tsx"/>
+ <layer id="1" name="Слой тайлов 1" width="93" height="93">
+  <data encoding="base64" compression="zlib">
+   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
+  </data>
+ </layer>
+ <layer id="3" name="Слой тайлов 2" width="93" height="93">
+  <data encoding="base64" compression="zlib">
+   eJztXc2S0zAMDrstl71w2QsXLvwM/WH4meEA3NhH4BmWGxx4gTw68Yw1qKpNq1iqvzr+ZjRJN04raxVJTvU1w4CJu0lWk9zG7Q2T2yg3bEv767j/1Emve6YT6bWO+2v2+VJ3GvPSSS8LvCg8/5mJFse4LzzfSy8LlM7Ny89LfeG5iRY+KLW519zulON/RiEg+7l2bhJeNn+iHH9NNi/185CzKL+u2Gvap7xLf+fj+XYljq+VelyTzUv9/L2JFsf4oBwvbY5ct5T6+UcTLY7xrfB8r9xugdL6ANXmLceWbnM9tPWBxBcTLY7xle3LWH0OkOvzUpt/mmQTZTfJdpJ9lF0Ufoy2dM6Wvd6y8Z/ZZ8yxecs51MufeJ45x+aPUQjIObTUz738ieeZbvNDePl5y/e4Sm2Oel8ROYe+Hf7lL8p7IX+9muQ1kzfDYb7cxPHvHPXaCfmfXruoD+VkL728kPP92tdrzveRffpc5GxeOy+h+oIFcnOr7U8t2zx3D6a2n+diC/L651yg+lPO5rX1sgBqbMndj6t9/VkgZ/Pa13Au5tX2BQvkruHa/tSyn+fmhurnLcfz2nNrOYeirvdarhVzsaW2P6Gujy2AGs9Rc7sFUHNVy7Uiak3Wss1R54Ya8yyQs3ntuaHWsBa4tlqxZZvXnlvLsQV1bi3Xiqhz066Jgu9QDzznfcl+ed77Tv3vQTz7SDj/jHT6Phx+v/7AxpCsnPUie3DeQEovyScI2/B/KO059rquW+bNneo5HqM8Zo4jz80DFj19/D1SvXejEGl7Lz+XNv8T5Vyg+kKIebLPVIuaPMxxyF9/Xr5g0dMn/VzjSwEyx3HONedn8zzH+Wo8F63E61MYo6Qg64GVEP7ZKQ55itNO55Yg2Lz0WqnJTxuHvN1ReHMSMrbMASpvB1WvEItb5QTW0uvHieMyns9Bt7kOFja/BD9tDlD1ssihoa+detrDlvPMiHeW4qbth0OemuyN5/y0gF+T/M7oIDk7pBdx3eiz92Kf8+i4Dnx/J8ZJvbSQa6I58Fp7zOHkcruj8olk3TIOp+tz6W9Iaw9ucyRf4EjZfFS+h9c6FPX6s/idotL/G/K9JA9Y3IcNPDDKG+fw02Se8eSnUe7ieVjywTmvnOfJS/DmyGan7MXzcU6vlnvBPGBhL1TeDiosuAgt92t4wOK7cdQeNVRY9Jeh9pGgwqLXCbVHDRUWORSVn4YKi9iC2i+FCk+b9xyahmfd0v08jZy9NH7e16E6WKwhe2zRwSKeo/6WASos6jxUPgMqLOyF2ueNCouao/u5Dhb87H4vVweLOs+i3lwSLOJCr1t0sPi+ocdzHTz9vK/909De+w6xO/UctxQPjPPSaNzSvsfgvDluh5S9uE2JVxDyaml/y9JqmdK+G4v+86XF+Jb7uFBRanOL2LI0m1vz5uZgabWMRb9i93MdLPwc9dmoqLDgxPfYooPF82RQfz8CFQi14tJii0Vc6DlUB4u6pa9DdbDgcPUcqkNfE10eFve4UH+PCxUWfh54YCluNuepce41Px54Y9f2/LRS0HPwJMde8vs2wzEXn+z1F13aXCU=
+  </data>
+ </layer>
+ <layer id="6" name="Слой тайлов 3" width="93" height="93">
+  <data encoding="base64" compression="zlib">
+   eJzt2jEKgDAMBVCvpquTbiJ4/2M4Ck7WKkn1vbEZ+ruUENJ1cOijA1y0FZ4DkMPdf9r/Dty1RAcAmqVvAfiG87zTXBEAAAAAAAAA4F1Z9zWGi/e3skdyfg/A07LuU2fNBQDEydofZM0F0Iqs87usuQAAAAAAAACA/xor63+zVtYBAKDEHB2gMVN0AAAAoMgO/b8MYA==
+  </data>
+ </layer>
+ <layer id="8" name="Слой тайлов 4" width="93" height="93">
+  <data encoding="base64" compression="zlib">
+   eJztwYEAAAAAw6D5U1/gCFUBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADAN4ckAAE=
+  </data>
+ </layer>
+ <objectgroup id="5" name="Слой объектов 1">
+  <object id="4" name="Player" type="player" x="2177.33" y="349.333" width="22.6667" height="24"/>
+  <object id="5" name="Skull" type="enemy" x="4235" y="62" width="24" height="22"/>
+  <object id="7" name="Skull" type="enemy" x="3799.67" y="680.667" width="32" height="29.3333"/>
+  <object id="9" name="Skull" type="enemy" x="1878.75" y="2020.83" width="39.75" height="38"/>
+  <object id="11" name="Skull" type="enemy" x="2453.67" y="1883.67" width="36" height="30"/>
+  <object id="12" name="Skull" type="enemy" x="2021" y="2405" width="37" height="34"/>
+  <object id="14" name="Skull" type="enemy" x="250.667" y="2027.34" width="28" height="27.3333"/>
+  <object id="15" name="Skull" type="enemy" x="394" y="2358" width="32" height="34"/>
+  <object id="16" name="0 2" type="script" x="3775" y="288.334" width="45.3333" height="237.833"/>
+  <object id="17" name="1 1" type="script" x="2113.08" y="1945" width="239.25" height="46.9034"/>
+  <object id="18" name="1 0" type="script" x="657.5" y="2114.3" width="43.6667" height="237"/>
+  <object id="19" name="2" type="room" x="49.3333" y="1869.33" width="717.333" height="724"/>
+  <object id="20" name="1" type="room" x="3697.5" y="48" width="717.5" height="721"/>
+  <object id="21" name="3" type="room" x="1875" y="1871" width="717" height="720"/>
+  <object id="22" name="0 2" type="script" x="3939.34" y="650" width="235.333" height="44"/>
+  <object id="23" name="1 1" type="script" x="2478" y="2112.33" width="47" height="239.667"/>
+  <object id="25" name="Skull" type="enemy" x="674.667" y="2498.67" width="42.6667" height="41.3333"/>
+ </objectgroup>
+</map>
