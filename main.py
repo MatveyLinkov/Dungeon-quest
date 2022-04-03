@@ -6,20 +6,380 @@ import pygame
 import pytmx
 
 
+def load_image(name, colorkey=None):
+    fullname = os.path.join('data', name)
+    if not os.path.isfile(fullname):
+        print(f'Файл с изображением "{fullname}" отсутствует')
+        sys.exit()
+    image = pygame.image.load(fullname)
+    if colorkey is None:
+        image = image.convert_alpha()
+    else:
+        image = image.convert()
+        if colorkey == -1:
+            colorkey = image.get_at((0, 0))
+        image.set_colorkey(colorkey)
+    return image
+
+
+def terminate():
+    pygame.quit()
+    sys.exit()
+
+
+def getting_weapon():
+    global current_weapon, inventory
+    new_weapon = random.choice(weapons[1:])
+    inventory[2] = new_weapon
+    WeaponInInventory(weapons_image[new_weapon], 1)
+
+
+def choose_weapon(button):
+    global current_weapon
+    if button == 1:
+        current_weapon = inventory[1]
+        Inventory(0, True)
+    elif button == 2:
+        Inventory(1, True)
+        if len(inventory) >= 2:
+            current_weapon = inventory[2]
+
+
+def show_text(screen, text, font, position, color):  # преобразование текста
+    font_color = pygame.Color(color)
+    text = font.render(text, 1, font_color)  # передаём строку для экрана, затем сглаживание, цвет
+    screen.blit(text, position)
+
+
+def start_screen():  # начальный экран
+    global transit, screen
+    if transit:
+        pygame.mixer.music.load('music/intro.mp3')
+        pygame.mixer.music.play()
+        pygame.mixer.music.set_volume(volume)
+    pygame.mouse.set_visible(True)
+    selection_pos = 0
+    text = ['Head-Knight', 'Играть', 'Мануал', 'Настройки', 'Выход']
+    if c == 1:
+        fon = pygame.transform.scale(load_image('start_fon_720p.png'), (resize(1280), resize(720)))
+    else:
+        fon = pygame.transform.scale(load_image('start_fon.png'), (resize(1280), resize(720)))
+    coord_x = [375, 554, 550, 510, 570]
+    coord_y = [100, 260, 340, 420, 500]
+    fonts_size = [130, 65, 65, 65, 65]
+    selection_coord = [(resize(500), resize(250)), (resize(500), resize(330)),
+                       (resize(500), resize(410)), (resize(500), resize(490))]
+    while not start_game:
+        screen.fill((0, 0, 0))
+        screen.blit(fon, (0, 0))
+        for elem in range(len(text)):
+            font = [pygame.font.Font("fonts/American TextC.ttf", resize(fonts_size[elem])),
+                    pygame.font.Font("fonts/heinrichtext.ttf", resize(fonts_size[elem])),
+                    pygame.font.Font("fonts/heinrichtext.ttf", resize(fonts_size[elem])),
+                    pygame.font.Font("fonts/heinrichtext.ttf", resize(fonts_size[elem])),
+                    pygame.font.Font("fonts/heinrichtext.ttf", resize(fonts_size[elem]))]
+            show_text(screen, text[elem], font[elem], (resize(coord_x[elem]),
+                                                            resize(coord_y[elem])), 'orange')
+        pygame.draw.rect(screen, '#ffd700', (selection_coord[selection_pos],
+                                                  (resize(300), resize(75))), resize(5))
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == pygame.BUTTON_LEFT:
+                    if resize(500) <= event.pos[0] <= resize(805) and\
+                            resize(250) <= event.pos[1] <= resize(580):
+                        if selection_pos == 0:
+                            transit = True
+                            start_game.append(1)
+                            return
+                        elif selection_pos == 1:
+                            tutorial()
+                        elif selection_pos == 2:
+                            settings()
+                        elif selection_pos == 3:
+                            terminate()
+            elif event.type == pygame.KEYDOWN:
+                if event.key in [pygame.K_DOWN, pygame.K_s]:
+                    selection_pos += 1
+                    if selection_pos == 4:
+                        selection_pos = 0
+                elif event.key in [pygame.K_UP, pygame.K_w]:
+                    selection_pos -= 1
+                    if selection_pos == -1:
+                        selection_pos = 3
+                elif event.key in [pygame.K_SPACE, pygame.K_RETURN]:
+                    if selection_pos == 0:
+                        transit = True
+                        start_game.append(1)
+                        return
+                    elif selection_pos == 1:
+                        tutorial()
+                    elif selection_pos == 2:
+                        settings()
+                    if selection_pos == 3:
+                        terminate()
+                elif event.key == pygame.K_ESCAPE:
+                    terminate()
+            elif event.type == pygame.MOUSEMOTION:
+                if resize(500) <= event.pos[0] <= resize(805):
+                    if resize(250) <= event.pos[1] <= resize(330):
+                        selection_pos = 0
+                    if resize(330) <= event.pos[1] <= resize(410):
+                        selection_pos = 1
+                    if resize(410) <= event.pos[1] <= resize(490):
+                        selection_pos = 2
+                    if resize(490) <= event.pos[1] <= resize(580):
+                        selection_pos = 3
+        pygame.display.flip()
+    return
+
+
+def tutorial():
+    global transit
+    transit = False
+    blurred_fon = pygame.transform.scale(load_image('blurred_fon.png'), (resize(1280), resize(720)))
+    screen.blit(blurred_fon, (0, 0))
+    font = pygame.font.Font("fonts/heinrichtext.ttf", resize(50))
+    text = ['1. Ходьба - WASD;',
+            '2. Стрельба - стрелки на клавиатуре;',
+            '3. Выбор оружия - цифры на клавиатуре (1, 2);',
+            '4. Взаимодейстия с объектами - E;',
+            '5. Перезагрузка уровня - R;',
+            '6. Выход - Esc.']
+    show_text(screen, 'Назад', pygame.font.Font("fonts/heinrichtext.ttf",
+                                                resize(60)), (resize(1120), resize(20)), 'orange')
+    pygame.draw.rect(screen, '#ffd700', ((resize(1110), resize(10)),
+                                         (resize(155), resize(70))), resize(5))
+    for i in range(len(text)):
+        show_text(screen, text[i], font, (resize(165), resize(90 + i * 100)), 'white')
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if resize(1115) <= event.pos[0] <= resize(1260) and\
+                        resize(15) <= event.pos[1] <= resize(75):
+                    start_screen()
+                    return
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    start_screen()
+                    return
+        pygame.display.flip()
+
+
+def settings():
+    global c, screen, full_screen, volume, size, width, height, transit
+    settings_accept = False
+    selection_pos = 0
+    coeff = c
+    resolution = {1: (1280, 720), 1.25: (1600, 900), 1.5: (1920, 1080)}
+    while True:
+        text = [f'Разрешение',
+                'X'.join(str(el) for el in resolution[coeff]),
+                'Полный экран',
+                ['OFF', 'ON'][full_screen],
+                'Громкость музыки',
+                str(round(volume * 10)),
+                'Применить изменения',
+                'Назад']
+        selection_coord = [(resize(145), resize(70)), (resize(145), resize(270)),
+                           (resize(145), resize(470)), (resize(145), resize(620)),
+                           (resize(985), resize(620))]
+        font = pygame.font.Font("fonts/heinrichtext.ttf", resize(75))
+        blurred_fon = pygame.transform.scale(load_image('blurred_fon.png'),
+                                             (resize(1280), resize(720)))
+        screen.blit(blurred_fon, (0, 0))
+        if selection_pos < 3:
+            pygame.draw.rect(screen, '#ffd700', (selection_coord[selection_pos],
+                                                 (resize(1020), resize(80))), resize(5))
+        elif selection_pos == 3:
+            pygame.draw.rect(screen, '#ffd700', (selection_coord[selection_pos],
+                                                 (resize(720), resize(80))), resize(5))
+        else:
+            pygame.draw.rect(screen, '#ffd700', (selection_coord[selection_pos],
+                                                 (resize(190), resize(80))), resize(5))
+        for i in range(6):
+            if i % 2 == 0:
+                show_text(screen, text[i], font, (resize(165), resize(80 + i * 100)), 'orange')
+            else:
+                show_text(screen, text[i], font,
+                          (resize(880), resize(80 + (i - 1) * 100)), 'orange')
+        for i in range(6, 8):
+            show_text(screen, text[i], font, (resize(165 + (i - 6) * 830), resize(630)), 'orange')
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    transit = False
+                    start_screen()
+                    return
+                elif event.key in [pygame.K_LEFT, pygame.K_a]:
+                    if selection_pos == 0:
+                        coeff -= 0.25
+                        if coeff <= 0.75:
+                            coeff = 1.5
+                    elif selection_pos == 1:
+                        full_screen = -(full_screen - 1)
+                    elif selection_pos == 2:
+                        volume -= 0.1
+                        if volume < 0:
+                            volume = 1
+                    elif selection_pos == 3:
+                        selection_pos = 2
+                    elif selection_pos == 4:
+                        selection_pos = 3
+                elif event.key in [pygame.K_RIGHT, pygame.K_d]:
+                    if selection_pos == 0:
+                        coeff += 0.25
+                        if coeff >= 1.75:
+                            coeff = 1
+                    elif selection_pos == 1:
+                        full_screen = -(full_screen - 1)
+                    elif selection_pos == 2:
+                        volume += 0.1
+                        if volume > 1:
+                            volume = 0
+                    elif selection_pos == 3:
+                        selection_pos = 4
+                    elif selection_pos == 4:
+                        selection_pos = 0
+                elif event.key in [pygame.K_DOWN, pygame.K_s]:
+                    selection_pos += 1
+                    if selection_pos == 5:
+                        selection_pos = 0
+                elif event.key in [pygame.K_UP, pygame.K_w]:
+                    selection_pos -= 1
+                    if selection_pos == -1:
+                        selection_pos = 4
+                elif event.key in [pygame.K_SPACE, pygame.K_RETURN]:
+                    if selection_pos == 3:
+                        settings_accept = True
+                    elif selection_pos == 4:
+                        start_screen()
+                        return
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == pygame.BUTTON_LEFT:
+                    if resize(145) <= event.pos[0] <= resize(1165) and \
+                            resize(60) <= event.pos[1] <= resize(170):
+                        if selection_pos == 0:
+                            coeff += 0.25
+                            if coeff >= 1.75:
+                                coeff = 1
+                    if resize(145) <= event.pos[0] <= resize(1165) and \
+                            resize(260) <= event.pos[1] <= resize(370):
+                        full_screen = -(full_screen - 1)
+                    if resize(145) <= event.pos[0] <= resize(1165) and \
+                            resize(460) <= event.pos[1] <= resize(570):
+                        volume += 0.1
+                        if volume > 1:
+                            volume = 0
+                    if resize(145) <= event.pos[0] <= resize(860) and \
+                            resize(620) <= event.pos[1] <= resize(700):
+                        settings_accept = True
+                    if resize(980) <= event.pos[0] <= resize(1170) and \
+                            resize(620) <= event.pos[1] <= resize(700):
+                        start_screen()
+                        return
+            elif event.type == pygame.MOUSEMOTION:
+                if resize(145) <= event.pos[0] <= resize(1165) and\
+                        resize(60) <= event.pos[1] <= resize(170):
+                    selection_pos = 0
+                if resize(145) <= event.pos[0] <= resize(1165) and\
+                        resize(260) <= event.pos[1] <= resize(370):
+                    selection_pos = 1
+                if resize(145) <= event.pos[0] <= resize(1165) and\
+                        resize(460) <= event.pos[1] <= resize(570):
+                    selection_pos = 2
+                if resize(145) <= event.pos[0] <= resize(860) and \
+                        resize(620) <= event.pos[1] <= resize(700):
+                    selection_pos = 3
+                if resize(980) <= event.pos[0] <= resize(1170) and\
+                        resize(620) <= event.pos[1] <= resize(700):
+                    selection_pos = 4
+            if settings_accept:
+                c = coeff
+                if full_screen == 0:
+                    screen = pygame.display.set_mode(resolution[c])
+                else:
+                    screen = pygame.display.set_mode(resolution[c], pygame.FULLSCREEN)
+                size = width, height = resolution[c]
+                settings_accept = False
+        pygame.mixer.music.set_volume(volume)
+        pygame.display.flip()
+
+
+def statistics():
+    global count
+    count += 1
+    if not transit:
+        if count >= 100:
+            count = 0
+            timer[1] += 1
+            if timer[1] == 60:
+                timer[1] = 0
+                timer[0] += 1
+
+
+def transition():
+    screen.fill(pygame.Color(0, 0, 0))
+    if next_level is True:
+        if len(str(timer[0])) < 2:
+            timer[0] = '0' + str(timer[0])
+        if len(str(timer[1])) < 2:
+            timer[1] = '0' + str(timer[1])
+        text = [f"Уровень: {str(int(map_number) - 1)}",
+                f"Время: {timer[0]}:{timer[1]}",
+                f"Пройденных мини-игр: {minigame_count}"]
+        font = pygame.font.Font("fonts/heinrichtext.ttf", resize(75))
+        for i in range(len(text)):
+            show_text(screen, text[i], font, (resize(185), resize(110 + 210 * i)), 'white')
+
+
+def move_count(screen, text, position, color):
+    global restart, dungeon_map, minigame_count, key_up
+    if text == 0:
+        text = 'X'
+    elif text < 0:
+        restart = True
+    if position == maps[level][1] and text != -1:
+        text = ''
+        [s.kill() for s in all_sprites]
+        minigame_count += 1
+        dungeon_map = True
+        key_up = False
+    screen.fill((0, 0, 0))
+    font = pygame.font.Font(None, resize(50))
+    text = font.render(str(text), True, color)
+    text_x = 10
+    text_y = 10
+    screen.blit(text, (text_x, text_y))
+
+
+def resize(number):
+    return round(number * c)
+
+
 pygame.init()
-start_size = start_width, start_height = 1280, 720
-startscreen = pygame.display.set_mode(start_size)
+full_screen = 0
+volume = 1
+c = 1
+size = width, height = 1280, 720
+screen = pygame.display.set_mode(size, pygame.RESIZABLE)
 map_number = '1'
 maps = {'castle_1.tmx': [23, (11, 8)], 'castle_2.tmx': [24, (10, 7)],
         'castle_3.tmx': [23, (12, 5)]}
 level = 'castle_' + map_number + '.tmx'
-size = width, height = 1280, 720
 FPS = 60
 start_success = False
 next_level = False
 clock = pygame.time.Clock()
 MAPS_DIR = 'levels'
 final = False
+transit = True
+start_game = []
 all_sprites = pygame.sprite.Group()
 tiles_group = pygame.sprite.Group()
 walls_group = pygame.sprite.Group()
@@ -51,24 +411,6 @@ mini_keys_group = pygame.sprite.Group()
 mini_doors_group = pygame.sprite.Group()
 all_cells_group = pygame.sprite.Group()
 weapon_group = pygame.sprite.Group()
-
-
-def load_image(name, colorkey=None):
-    fullname = os.path.join('data', name)
-    if not os.path.isfile(fullname):
-        print(f'Файл с изображением "{fullname}" отсутствует')
-        sys.exit()
-    image = pygame.image.load(fullname)
-    if colorkey is None:
-        image = image.convert_alpha()
-    else:
-        image = image.convert()
-        if colorkey == -1:
-            colorkey = image.get_at((0, 0))
-        image.set_colorkey(colorkey)
-    return image
-
-
 floor = [6, 15, 21, 22, 23, 24, 30, 31, 32, 33]
 completed_levels = []
 destroyed_barriers = []
@@ -117,94 +459,6 @@ ts = tile_width = tile_height = 48
 chest = 84
 key = 89
 player = None
-
-
-def terminate():
-    pygame.quit()
-    sys.exit()
-
-
-def getting_weapon():
-    global current_weapon, inventory
-    new_weapon = random.choice(weapons[1:])
-    inventory[2] = new_weapon
-    WeaponInInventory(weapons_image[new_weapon], 1)
-
-
-def choose_weapon(button):
-    global current_weapon
-    if button == 1:
-        current_weapon = inventory[1]
-        Inventory(0, True)
-    elif button == 2:
-        Inventory(1, True)
-        if len(inventory) >= 2:
-            current_weapon = inventory[2]
-
-
-def pickup_key():
-    pass
-
-
-def show_text(screen, text, font, position):  # преобразование текста
-    font_color = pygame.Color("orange")
-    text = font.render(text, 1, font_color)  # передаём строку для экрана, затем сглаживание, цвет
-    screen.blit(text, position)
-
-
-def start_screen():  # начальный экран
-    pygame.mouse.set_visible(True)
-    text = ['Dungeon quest', 'play', 'exit']
-    fon = load_image('start_fon.png')
-    startscreen.blit(fon, (0, 0))
-    coord_x = [340, 575, 590]
-    coord_y = [150, 320, 460]
-    fonts_size = [100, 75, 75]
-    for elem in range(len(text)):
-        font = [pygame.font.Font("fonts/Dirtchunk.otf", fonts_size[elem]),
-                pygame.font.Font("fonts/jelani.otf", fonts_size[elem]),
-                pygame.font.Font("fonts/jelani.otf", fonts_size[elem])]
-        show_text(startscreen, text[elem], font[elem], (coord_x[elem], coord_y[elem]))
-    pygame.mixer.music.load('music/intro.mp3')
-    pygame.mixer.music.play()
-    while True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                terminate()
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == pygame.BUTTON_LEFT:
-                    if 575 <= event.pos[0] <= 720 and 350 <= event.pos[1] <= 420:
-                        return
-                    if 575 <= event.pos[0] <= 720 and 495 <= event.pos[1] <= 545:
-                        terminate()
-        pygame.display.flip()
-        clock.tick(50)
-
-
-class FinalScreen(pygame.sprite.Sprite):
-    def __init__(self, columns, rows, pos_x, pos_y, image, flip=False):
-        super().__init__(animated_sprites_group, all_sprites)
-        self.frames = []
-        self.crop_sheet(image, columns, rows)
-        self.cur_frame = 0
-        self.image = self.frames[self.cur_frame]
-        self.rect = self.image.get_rect()
-        self.rect = self.rect.move(pos_x, pos_y)
-        self.flip = flip
-
-    def crop_sheet(self, sheet, columns, rows):
-        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
-                                sheet.get_height() // rows)
-        for i in range(rows):
-            for j in range(columns):
-                frame_coord = (self.rect.w * j, self.rect.h * i)
-                [self.frames.append(sheet.subsurface(pygame.Rect(frame_coord, self.rect.size)))
-                 for i in range(6)]
-
-    def update(self):
-        self.cur_frame = (self.cur_frame + 1) % len(self.frames)
-        self.image = self.frames[self.cur_frame]
-        self.image = pygame.transform.flip(self.image, self.flip, False)
 
 
 class Dungeon:
@@ -314,7 +568,11 @@ class Tile(pygame.sprite.Sprite):
             self.add(walls_group)
         self.image = image
         self.rect = self.image.get_rect()
-        self.rect = self.rect.move(tile_width * pos_x, tile_height * pos_y)
+        if dungeon_map:
+            self.rect = self.rect.move(tile_width * pos_x, tile_height * pos_y)
+        else:
+            self.rect = self.rect.move((width - 1280) / 2 + tile_width * pos_x,
+                                       (height - 720) / 2 + tile_height * pos_y)
 
 
 class Barrier(pygame.sprite.Sprite):
@@ -916,7 +1174,7 @@ class Inventory(pygame.sprite.Sprite):
         else:
             self.image = cell_image
         self.rect = self.image.get_rect()
-        self.rect = self.rect.move(1130 + section * tile_width, 0)
+        self.rect = self.rect.move((width - 150 + section * tile_width), 0)
 
 
 class WeaponInInventory(pygame.sprite.Sprite):
@@ -925,9 +1183,9 @@ class WeaponInInventory(pygame.sprite.Sprite):
         self.image = weapon
         self.rect = self.image.get_rect()
         if section != 2:
-            self.rect = self.rect.move(1145 + 49 * section, 5)
+            self.rect = self.rect.move(width - 135 + 49 * section, 5)
         else:
-            self.rect = self.rect.move(1226, 0)
+            self.rect = self.rect.move(width - 54, 0)
 
 
 class MiniPlayer(pygame.sprite.Sprite):
@@ -940,7 +1198,8 @@ class MiniPlayer(pygame.sprite.Sprite):
         self.cur_frame = 0
         self.image = self.frames[self.cur_frame]
         self.rect = self.image.get_rect()
-        self.rect = self.rect.move(tile_width * pos_x + 4, tile_height * pos_y + 4)
+        self.rect = self.rect.move((width - 1280) / 2 + tile_width * pos_x + 4,
+                                   (height - 720) / 2 + tile_height * pos_y + 4)
         self.mask = pygame.mask.from_surface(self.image)
         self.attempt = maps[level][0]
         self.color = 'white'
@@ -964,7 +1223,8 @@ class MiniPlayer(pygame.sprite.Sprite):
             damage += 1
         if flip:
             self.image = pygame.transform.flip(self.image, True, False)
-        if not castle.get_tile_id((self.rect.x // 64, self.rect.y // 64), 0) or back:
+        if not castle.get_tile_id(((self.rect.x - (width - 1280) / 2) // 64,
+                                   (self.rect.y - (height - 720) / 2) // 64), 0) or back:
             self.rect.x -= x
             self.rect.y -= y
             self.pos_x = self.rect.x // ts
@@ -979,7 +1239,8 @@ class MiniPlayer(pygame.sprite.Sprite):
             damage += 1
             self.color = 'red'
         self.attempt -= damage
-        move_count(screen, self.attempt, (self.rect.x // ts, self.rect.y // ts), self.color)
+        move_count(screen, self.attempt, ((self.rect.x - (width - 1280) / 2) // ts,
+                                          (self.rect.y - (height - 720) / 2) // ts), self.color)
 
 
 class Slime(pygame.sprite.Sprite):
@@ -991,7 +1252,8 @@ class Slime(pygame.sprite.Sprite):
         self.cur_frame = 0
         self.image = self.frames[self.cur_frame]
         self.rect = self.image.get_rect()
-        self.rect = self.rect.move(tile_width * pos_x + 8, tile_height * pos_y + 8)
+        self.rect = self.rect.move((width - 1280) / 2 + tile_width * pos_x + 8,
+                                   (height - 720) / 2 + tile_height * pos_y + 8)
 
     def crop_sheet(self, sheet, columns, rows):
         self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
@@ -1005,7 +1267,8 @@ class Slime(pygame.sprite.Sprite):
     def update(self, x, y, flip):
         self.cur_frame = (self.cur_frame + 1) % len(self.frames)
         self.image = self.frames[self.cur_frame]
-        if (self.pos_x, self.pos_y) == (player.rect.x // ts, player.rect.y // ts):
+        if (self.pos_x, self.pos_y) == ((player.rect.x - (width - 1280) / 2) // ts,
+                                        (player.rect.y - (height - 720) / 2) // ts):
             self.rect.x += x
             self.rect.y += y
             self.pos_x += x // ts
@@ -1026,21 +1289,29 @@ class Table(pygame.sprite.Sprite):
         self.pos_x, self.pos_y = pos_x, pos_y
         self.image = image
         self.rect = self.image.get_rect()
-        self.rect = self.rect.move(tile_width * pos_x, tile_height * pos_y)
+        self.rect = self.rect.move((width - 1280) / 2 + tile_width * pos_x,
+                                   (height - 720) / 2 + tile_height * pos_y)
 
     def update(self, x, y, flip):
         touch = 0
-        if (self.rect.x // ts, self.rect.y // ts) == (player.rect.x // ts, player.rect.y // ts):
+        if ((self.rect.x - (width - 1280) / 2) // ts, (self.rect.y - (height - 720) / 2) // ts) ==\
+                ((player.rect.x - (width - 1280) / 2) // ts,
+                 (player.rect.y - (height - 720) / 2) // ts):
             self.rect.x += x
             self.rect.y += y
             touch += 1
             player_group.update(x, y, flip, True)
-        if (castle.get_tile_id((self.rect.x // ts, self.rect.y // ts), 1) or (
-                (self.rect.x // ts, self.rect.y // ts) in
-                [(spike_sprite.rect.x // ts, spike_sprite.rect.y // ts)
+        if (castle.get_tile_id(((self.rect.x - (width - 1280) / 2) // ts,
+                                (self.rect.y - (height - 720) / 2) // ts), 1) or (
+                ((self.rect.x - (width - 1280) / 2) // ts,
+                 (self.rect.y - (height - 720) / 2) // ts) in
+                [((spike_sprite.rect.x - (width - 1280) / 2) // ts,
+                  (spike_sprite.rect.y - (height - 720) / 2) // ts)
                  for spike_sprite in tables_group if self != spike_sprite] and touch >= 1) or
-                ((self.rect.x // ts, self.rect.y // ts) in
-                 [(round(slimes_sprite.rect.x / ts), round(slimes_sprite.rect.y / ts))
+                (((self.rect.x - (width - 1280) / 2) // ts,
+                  (self.rect.y - (height - 720) / 2) // ts) in
+                 [(round((slimes_sprite.rect.x - (width - 1280) / 2) / ts),
+                   (round(slimes_sprite.rect.y - (height - 720) / 2) / ts))
                   for slimes_sprite in slimes_group])):
             self.rect.x -= x
             self.rect.y -= y
@@ -1052,11 +1323,14 @@ class Spikes(pygame.sprite.Sprite):
         self.pos_x, self.pos_y = pos_x, pos_y
         self.image = pygame.transform.scale(load_image(spikes_images[0]), (64, 64))
         self.rect = self.image.get_rect()
-        self.rect = self.rect.move(tile_width * pos_x, tile_height * pos_y)
+        self.rect = self.rect.move((width - 1280) / 2 + tile_width * pos_x,
+                                   (width - 720) / 2 + tile_height * pos_y)
 
     def update(self):
         self.image = pygame.transform.scale(load_image(spikes_images[1]), (64, 64))
-        if (self.pos_x, self.pos_y) in [(s.rect.x // ts, s.rect.y // ts) for s in tables_group] or\
+        if (self.pos_x, self.pos_y) in\
+                [((s.rect.x - (width - 1280) / 2) // ts,
+                  (s.rect.y - (height - 720) / 2) // ts) for s in tables_group] or\
                 pygame.sprite.spritecollideany(self, player_group):
             self.image = pygame.transform.scale(load_image(spikes_images[3]), (64, 64))
 
@@ -1067,7 +1341,8 @@ class MiniKey(pygame.sprite.Sprite):
         self.pos_x, self.pos_y = pos_x, pos_y
         self.image = image
         self.rect = self.image.get_rect()
-        self.rect = self.rect.move(tile_width * pos_x, tile_height * pos_y)
+        self.rect = self.rect.move((width - 1280) / 2 + tile_width * pos_x,
+                                   (height - 720) / 2 + tile_height * pos_y)
 
     def update(self):
         if pygame.sprite.spritecollideany(self, player_group):
@@ -1080,13 +1355,41 @@ class MiniDoor(pygame.sprite.Sprite):
         self.pos_x, self.pos_y = pos_x, pos_y
         self.image = image
         self.rect = self.image.get_rect()
-        self.rect = self.rect.move(tile_width * pos_x, tile_height * pos_y)
+        self.rect = self.rect.move((width - 1280) / 2 + tile_width * pos_x,
+                                   (height - 720) / 2 + tile_height * pos_y)
 
     def update(self):
         if len(mini_keys_group.sprites()) == 0:
             self.kill()
         if pygame.sprite.spritecollideany(self, player_group):
             player_group.update(x, y, flip, True)
+
+
+class FinalScreen(pygame.sprite.Sprite):
+    def __init__(self, columns, rows, pos_x, pos_y, image, flip=False):
+        super().__init__(animated_sprites_group, all_sprites)
+        self.frames = []
+        self.crop_sheet(image, columns, rows)
+        self.cur_frame = 0
+        self.image = self.frames[self.cur_frame]
+        self.rect = self.image.get_rect()
+        self.rect = self.rect.move((width - 1280) / 2 + pos_x,
+                                   (height - 720) / 2 + pos_y)
+        self.flip = flip
+
+    def crop_sheet(self, sheet, columns, rows):
+        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
+                                sheet.get_height() // rows)
+        for i in range(rows):
+            for j in range(columns):
+                frame_coord = (self.rect.w * j, self.rect.h * i)
+                [self.frames.append(sheet.subsurface(pygame.Rect(frame_coord, self.rect.size)))
+                 for i in range(6)]
+
+    def update(self):
+        self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+        self.image = self.frames[self.cur_frame]
+        self.image = pygame.transform.flip(self.image, self.flip, False)
 
 
 class Camera:
@@ -1103,50 +1406,8 @@ class Camera:
         self.dy = height // 2 - target.rect.y - target.rect.h // 2
 
 
-def statistics():
-    global count
-    count += 1
-    if count == 60:
-        count = 0
-        timer[1] += 1
-        if timer[1] == 60:
-            timer[1] = 0
-            timer[0] += 1
-
-
-def transition():
-    screen.fill(pygame.Color(0, 0, 0))
-    if next_level is True:
-        text = [f"Уровень: {str(int(map_number) - 1)}",
-                f"Время: {timer[0]}: {timer[1]}",
-                f"Кол-во пройденных мини-игр: {minigame_count}"]
-        font = pygame.font.Font("fonts/jelani.otf", 50)
-        for i in range(len(text)):
-            show_text(screen, text[i], font, (25, 210 * i))
-
-
-def move_count(screen, text, position, color):
-    global restart, dungeon_map, minigame_count, key_up
-    if text == 0:
-        text = 'X'
-    elif text < 0:
-        restart = True
-    if position == maps[level][1] and text != -1:
-        text = ''
-        [s.kill() for s in all_sprites]
-        minigame_count += 1
-        dungeon_map = True
-        key_up = False
-    screen.fill((0, 0, 0))
-    font = pygame.font.Font(None, 50)
-    text = font.render(str(text), True, color)
-    text_x = 10
-    text_y = 10
-    screen.blit(text, (text_x, text_y))
-
-
 if __name__ == '__main__':
-    pygame.display.set_caption('Dungeon Quest')
+    pygame.display.set_caption('Head-Knight')
     pygame.display.set_icon(load_image('icon.ico'))
     dungeon_map = True
     x, y = 0, 0
@@ -1160,7 +1421,6 @@ if __name__ == '__main__':
     lifesaver = 3
     timer = [0, 0]
     start_screen()
-    screen = pygame.display.set_mode(size)
     camera = Camera()
     clock = pygame.time.Clock()
     button = None
@@ -1173,7 +1433,6 @@ if __name__ == '__main__':
     visible = True
     restart = False
     change_mode = False
-    transit = False
     exit_to_menu = False
     transit_time = 0
     running = True
@@ -1184,6 +1443,8 @@ if __name__ == '__main__':
         if dungeon_map:
             if len(player_group) == 0:
                 if map_number != '4':
+                    [s.kill() for s in all_sprites]
+                    [s.kill() for s in all_cells_group]
                     transit = True
                     ts = tile_width = tile_height = 48
                     dungeon = Dungeon(f'dungeon_{map_number}.tmx')
@@ -1202,11 +1463,12 @@ if __name__ == '__main__':
                     WeaponInInventory(weapons_image.get('wooden_bow'), 0)
                     pygame.mixer.music.load('music/dungeon.mp3')
                     pygame.mixer.music.play(-1)
-                    pygame.mixer.music.set_volume(0.3)
+                    pygame.mixer.music.set_volume(0.6 * volume)
             if restart:
                 if map_number != '4':
                     [s.kill() for s in all_sprites]
                     [s.kill() for s in weapon_group]
+                    [s.kill() for s in all_cells_group]
                     completed_levels.clear()
                     destroyed_barriers.clear()
                     dungeon = Dungeon(f'dungeon_{map_number}.tmx')
@@ -1241,11 +1503,13 @@ if __name__ == '__main__':
                                 FinalScreen(1, 1, golden_chest_coord[i][0],
                                             golden_chest_coord[i][1], golden_chest)
                             pygame.mixer.music.load('music/good_end.mp3')
+                            pygame.mixer.music.set_volume(volume)
                         else:
                             FinalScreen(1, 1, 571, 400, player_dead)
                             FinalScreen(6, 4, 500, 300, animated_slimes)
                             FinalScreen(6, 4, 500, 400, animated_slimes, True)
                             pygame.mixer.music.load('music/bad_end.mp3')
+                            pygame.mixer.music.set_volume(volume)
                         pygame.mixer.music.play()
                 if lifesaver <= -1 or exit_to_menu:
                     [s.kill() for s in all_sprites]
@@ -1303,6 +1567,7 @@ if __name__ == '__main__':
                     elif event.key == pygame.K_ESCAPE:
                         restart = True
                         exit_to_menu = True
+                        start_game.clear()
                         if final:
                             running = False
 
@@ -1398,7 +1663,7 @@ if __name__ == '__main__':
                 player_v = 64
                 pygame.mixer.music.load('music/castle.mp3')
                 pygame.mixer.music.play(-1)
-                pygame.mixer.music.set_volume(0.3)
+                pygame.mixer.music.set_volume(0.3 * volume)
             moving = False
             x, y = 0, 0
             if restart:
@@ -1458,7 +1723,7 @@ if __name__ == '__main__':
             if transit_time == 20 and next_level is False:
                 transit = False
                 transit_time = 0
-            if transit_time == 100 and next_level is True:
+            if transit_time == 120 and next_level is True:
                 level = 'castle_' + map_number + '.tmx'
                 transit = False
                 transit_time = 0
