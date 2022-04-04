@@ -1,6 +1,7 @@
 import os
 import random
 import sys
+import tkinter as tk
 
 import pygame
 import pytmx
@@ -79,9 +80,9 @@ def start_screen():  # начальный экран
                     pygame.font.Font("fonts/heinrichtext.ttf", resize(fonts_size[elem])),
                     pygame.font.Font("fonts/heinrichtext.ttf", resize(fonts_size[elem]))]
             show_text(screen, text[elem], font[elem], (resize(coord_x[elem]),
-                                                            resize(coord_y[elem])), 'orange')
+                                                       resize(coord_y[elem])), 'orange')
         pygame.draw.rect(screen, '#ffd700', (selection_coord[selection_pos],
-                                                  (resize(300), resize(75))), resize(5))
+                                             (resize(300), resize(75))), resize(5))
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
@@ -171,13 +172,13 @@ def tutorial():
 
 def settings():
     global c, screen, full_screen, volume, size, width, height, transit
+    transit = False
     settings_accept = False
     selection_pos = 0
-    coeff = c
-    resolution = {1: (1280, 720), 1.25: (1600, 900), 1.5: (1920, 1080)}
+    coeff = [resolution.index(el) for el in resolution if c in resolution[resolution.index(el)]][0]
     while True:
         text = [f'Разрешение',
-                'X'.join(str(el) for el in resolution[coeff]),
+                'X'.join(str(el) for el in resolution[coeff][list(resolution[coeff].keys())[-1]]),
                 'Полный экран',
                 ['OFF', 'ON'][full_screen],
                 'Громкость музыки',
@@ -213,14 +214,13 @@ def settings():
                 terminate()
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    transit = False
                     start_screen()
                     return
                 elif event.key in [pygame.K_LEFT, pygame.K_a]:
                     if selection_pos == 0:
-                        coeff -= 0.25
-                        if coeff <= 0.75:
-                            coeff = 1.5
+                        coeff -= 1
+                        if coeff <= 0:
+                            coeff = 6
                     elif selection_pos == 1:
                         full_screen = -(full_screen - 1)
                     elif selection_pos == 2:
@@ -233,9 +233,9 @@ def settings():
                         selection_pos = 3
                 elif event.key in [pygame.K_RIGHT, pygame.K_d]:
                     if selection_pos == 0:
-                        coeff += 0.25
-                        if coeff >= 1.75:
-                            coeff = 1
+                        coeff += 1
+                        if coeff >= len(resolution):
+                            coeff = 0
                     elif selection_pos == 1:
                         full_screen = -(full_screen - 1)
                     elif selection_pos == 2:
@@ -265,9 +265,9 @@ def settings():
                     if resize(145) <= event.pos[0] <= resize(1165) and \
                             resize(60) <= event.pos[1] <= resize(170):
                         if selection_pos == 0:
-                            coeff += 0.25
-                            if coeff >= 1.75:
-                                coeff = 1
+                            coeff += 1
+                            if coeff >= len(resolution):
+                                coeff = 0
                     if resize(145) <= event.pos[0] <= resize(1165) and \
                             resize(260) <= event.pos[1] <= resize(370):
                         full_screen = -(full_screen - 1)
@@ -300,13 +300,21 @@ def settings():
                         resize(620) <= event.pos[1] <= resize(700):
                     selection_pos = 4
             if settings_accept:
-                c = coeff
                 if full_screen == 0:
-                    screen = pygame.display.set_mode(resolution[c])
+                    c = list(resolution[coeff].keys())[0]
+                    if resolution[coeff][list(resolution[coeff].keys())[-1]] !=\
+                            (win_width, win_height):
+                        c = list(resolution[coeff].keys())[-1]
+                    size = width, height = resolution[coeff][c]
+                    screen = pygame.display.set_mode(resolution[coeff][c])
                 else:
-                    screen = pygame.display.set_mode(resolution[c], pygame.FULLSCREEN)
-                size = width, height = resolution[c]
+                    c = list(resolution[coeff].keys())[-1]
+                    size = width, height = resolution[coeff][c]
+                    screen = pygame.display.set_mode(resolution[coeff][c], pygame.FULLSCREEN)
                 settings_accept = False
+                with open('settings.ini', 'w') as settings_file:
+                    settings_file.write(f'ScreenSize - {list(resolution[coeff].keys())[0]}\n')
+                    settings_file.write(f'MusicVolume - {volume}')
         pygame.mixer.music.set_volume(volume)
         pygame.display.flip()
 
@@ -351,10 +359,10 @@ def move_count(screen, text, position, color):
         dungeon_map = True
         key_up = False
     screen.fill((0, 0, 0))
-    font = pygame.font.Font(None, resize(50))
+    font = pygame.font.Font(None, resize(100))
     text = font.render(str(text), True, color)
-    text_x = 10
-    text_y = 10
+    text_x = resize(120)
+    text_y = resize(120)
     screen.blit(text, (text_x, text_y))
 
 
@@ -362,12 +370,37 @@ def resize(number):
     return round(number * c)
 
 
+root = tk.Tk()
 pygame.init()
+data = [float(el.split(' - ')[-1].strip()) for el in open('settings.ini', 'r').readlines()]
+resolution = [{0.86796875: (1111, 628), 0.91875: (1176, 664)},
+              {0.94453125: (1209, 680), 1: (1280, 720)},
+              {1.00390625: (1285, 726), 1.0625: (1360, 768)},
+              {1.00859375: (1291, 726), 1.0671: (1366, 768)},
+              {1.18125: (1512, 850), 1.25: (1600, 900)},
+              {1.3046875: (1670, 937), 1.38125: (1768, 992)},
+              {1.416666666666667: (1814, 1020), 1.5: (1920, 1080)}]
+win_width, win_height = root.winfo_screenwidth(), root.winfo_screenheight()
+s = {}
+if data[0] == 0:
+    size = width, height = win_width - win_width // 18, win_height - win_height // 18
+else:
+    s = [el for el in resolution if data[0] in el][0]
+    size = width, height = [el for el in resolution if data[0] in el][0][data[0]]
+    if s[list(s.keys())[-1]] != (win_width, win_height):
+        size = width, height = s[list(s.keys())[-1]]
+resolution = resolution[:[el[list(el.keys())[0]]
+                          for el in resolution].index((win_width - win_width // 18,
+                                                       win_height - win_height // 18)) + 1]
 full_screen = 0
-volume = 1
-c = 1
-size = width, height = 1280, 720
-screen = pygame.display.set_mode(size, pygame.RESIZABLE)
+volume = data[1]
+if data[0] == 0:
+    c = list(resolution[[el[list(el.keys())[0]] for el in resolution].index(size)].keys())[0]
+else:
+    c = data[0]
+    if s[list(s.keys())[-1]] != (win_width, win_height):
+        c = list(s.keys())[-1]
+screen = pygame.display.set_mode(size)
 map_number = '1'
 maps = {'castle_1.tmx': [23, (11, 8)], 'castle_2.tmx': [24, (10, 7)],
         'castle_3.tmx': [23, (12, 5)]}
@@ -1324,7 +1357,7 @@ class Spikes(pygame.sprite.Sprite):
         self.image = pygame.transform.scale(load_image(spikes_images[0]), (64, 64))
         self.rect = self.image.get_rect()
         self.rect = self.rect.move((width - 1280) / 2 + tile_width * pos_x,
-                                   (width - 720) / 2 + tile_height * pos_y)
+                                   (height - 720) / 2 + tile_height * pos_y)
 
     def update(self):
         self.image = pygame.transform.scale(load_image(spikes_images[1]), (64, 64))
