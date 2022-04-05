@@ -734,9 +734,8 @@ class Room(pygame.sprite.Sprite):
                 self.kill()
                 completed_levels.append(self.name)
             if not self.fight and doors_close:
-                if [1 for enemy in filter(lambda x: pygame.sprite.collide_mask(self, x),
-                                          enemy_group)]:
-                    enemy_group.update(True)
+                [enemy.update(True) for enemy in
+                 filter(lambda x: pygame.sprite.collide_mask(self, x), enemy_group)]
                 self.fight = True
                 for script in scripts_group:
                     if pygame.sprite.collide_mask(self, script):
@@ -960,24 +959,24 @@ class Skull(pygame.sprite.Sprite):
                  for i in range(8)]
 
     def update(self, close=False):
-        if close and pygame.sprite.spritecollideany(self, rooms_group):
+        if close:
             self.close = close
         self.cur_frame = (self.cur_frame + 1) % len(self.frames)
         self.image = self.frames[self.cur_frame]
         if self.close:
-            if len([self.rect.x + j for j in range(self.rect.width + 1)
-                    if self.rect.x + j in
-                    [player.rect.x + i for i in range(player.rect.width + 1)]]) >= 1\
-                    and not self.moving:
+            if len([self.rect.x + j for j in filter(
+                    lambda x: x + self.rect.x in [player.rect.x + i for
+                                                  i in range(player.rect.width + 1)],
+                    range(self.rect.width + 1))]) >= 1 and not self.moving:
                 if self.rect.y < player.rect.y:
                     self.move_y = self.speed
                 else:
                     self.move_y = -self.speed
                 self.moving = True
-            elif len([self.rect.y + j for j in range(self.rect.height + 1)
-                      if self.rect.y + j in
-                      [player.rect.y + i for i in range(player.rect.height + 1)]]) >= 1 \
-                    and not self.moving:
+            elif len([self.rect.y + j for j in filter(
+                    lambda x: x + self.rect.y in [player.rect.y + i for
+                                                  i in range(player.rect.height + 1)],
+                    range(self.rect.height + 1))]) >= 1 and not self.moving:
                 if self.rect.x < player.rect.x:
                     self.move_x = self.speed
                     self.flip = False
@@ -1044,11 +1043,11 @@ class Goblin(pygame.sprite.Sprite):
                  for i in range(6)]
 
     def update(self, close=False):
-        if close and pygame.sprite.spritecollideany(self, rooms_group):
-            self.close = not self.close
         self.cur_frame = (self.cur_frame + 1) % len(self.frames[:self.half_frames])
         self.image = self.frames[:self.half_frames][self.cur_frame]
         self.move_x, self.move_y = 0, 0
+        if close:
+            self.close = not self.close
         if self.close:
             if (self.rect.x // ts, self.rect.y // ts) != (player.rect.x // ts, player.rect.y // ts):
                 self.moving = True
@@ -1118,8 +1117,8 @@ class Bomber(pygame.sprite.Sprite):
                  for i in range(6)]
 
     def update(self, close=False):
-        if close and pygame.sprite.spritecollideany(self, rooms_group):
-            self.close = not self.close
+        if close:
+            self.close = close
         self.cur_frame = (self.cur_frame + 1) % len(self.frames)
         self.image = self.frames[self.cur_frame]
         if self.close:
