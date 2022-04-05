@@ -737,9 +737,8 @@ class Room(pygame.sprite.Sprite):
                 list(map(lambda x: x.update(True),
                          filter(lambda x: pygame.sprite.collide_mask(self, x), enemy_group)))
                 self.fight = True
-                for script in scripts_group:
-                    if pygame.sprite.collide_mask(self, script):
-                        script.update(self.fight)
+                list(map(lambda x: x.update(self.fight),
+                         filter(lambda x: pygame.sprite.collide_mask(self, x), scripts_group)))
 
 
 class Script(pygame.sprite.Sprite):
@@ -964,19 +963,21 @@ class Skull(pygame.sprite.Sprite):
         self.cur_frame = (self.cur_frame + 1) % len(self.frames)
         self.image = self.frames[self.cur_frame]
         if self.close:
-            if len([self.rect.x + j for j in range(self.rect.width + 1)
-                    if self.rect.x + j in
-                    [player.rect.x + i for i in range(player.rect.width + 1)]]) >= 1\
-                    and not self.moving:
+            if len(list(map(lambda z: z + self.rect.x,
+                            filter(lambda y: y + self.rect.x in list(
+                                  map(lambda x: x + player.rect.x, range(
+                                      player.rect.width + 1))), range(
+                                  self.rect.width + 1))))) >= 1 and not self.moving:
                 if self.rect.y < player.rect.y:
                     self.move_y = self.speed
                 else:
                     self.move_y = -self.speed
                 self.moving = True
-            elif len([self.rect.y + j for j in range(self.rect.height + 1)
-                      if self.rect.y + j in
-                      [player.rect.y + i for i in range(player.rect.height + 1)]]) >= 1 \
-                    and not self.moving:
+            elif len(list(map(lambda z: z + self.rect.y,
+                              filter(lambda y: y + self.rect.y in list(
+                                  map(lambda x: x + player.rect.y, range(
+                                      player.rect.height + 1))), range(
+                                  self.rect.height + 1))))) >= 1 and not self.moving:
                 if self.rect.x < player.rect.x:
                     self.move_x = self.speed
                     self.flip = False
