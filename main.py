@@ -734,8 +734,8 @@ class Room(pygame.sprite.Sprite):
                 self.kill()
                 completed_levels.append(self.name)
             if not self.fight and doors_close:
-                [enemy.update(True) for enemy in enemy_group if
-                 pygame.sprite.collide_mask(self, enemy)]
+                [enemy.update(True) for enemy in
+                 filter(lambda x: pygame.sprite.collide_mask(self, x), enemy_group)]
                 self.fight = True
                 for script in scripts_group:
                     if pygame.sprite.collide_mask(self, script):
