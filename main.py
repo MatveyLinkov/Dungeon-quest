@@ -963,54 +963,55 @@ class Skull(pygame.sprite.Sprite):
             self.close = close
         self.cur_frame = (self.cur_frame + 1) % len(self.frames)
         self.image = self.frames[self.cur_frame]
-        if len([self.rect.x + j for j in range(self.rect.width + 1)
-                if self.rect.x + j in
-                [player.rect.x + i for i in range(player.rect.width + 1)]]) >= 1\
-                and not self.moving and self.close:
-            if self.rect.y < player.rect.y:
-                self.move_y = self.speed
+        if self.close:
+            if len([self.rect.x + j for j in range(self.rect.width + 1)
+                    if self.rect.x + j in
+                    [player.rect.x + i for i in range(player.rect.width + 1)]]) >= 1\
+                    and not self.moving:
+                if self.rect.y < player.rect.y:
+                    self.move_y = self.speed
+                else:
+                    self.move_y = -self.speed
+                self.moving = True
+            elif len([self.rect.y + j for j in range(self.rect.height + 1)
+                      if self.rect.y + j in
+                      [player.rect.y + i for i in range(player.rect.height + 1)]]) >= 1 \
+                    and not self.moving:
+                if self.rect.x < player.rect.x:
+                    self.move_x = self.speed
+                    self.flip = False
+                else:
+                    self.move_x = -self.speed
+                    self.flip = True
+                self.moving = True
+            if self.flip:
+                self.image = pygame.transform.flip(self.image, True, False)
+            if not (pygame.sprite.spritecollideany(self, walls_group) or
+                    pygame.sprite.spritecollideany(self, barriers_group)):
+                if self.moving:
+                    self.rect.x += self.move_x
+                    self.rect.y += self.move_y
             else:
-                self.move_y = -self.speed
-            self.moving = True
-        elif len([self.rect.y + j for j in range(self.rect.height + 1)
-                  if self.rect.y + j in
-                  [player.rect.y + i for i in range(player.rect.height + 1)]]) >= 1 \
-                and not self.moving and self.close:
-            if self.rect.x < player.rect.x:
-                self.move_x = self.speed
-                self.flip = False
-            else:
-                self.move_x = -self.speed
-                self.flip = True
-            self.moving = True
-        if self.flip:
-            self.image = pygame.transform.flip(self.image, True, False)
-        if not (pygame.sprite.spritecollideany(self, walls_group) or
-                pygame.sprite.spritecollideany(self, barriers_group)):
-            if self.moving:
-                self.rect.x += self.move_x
-                self.rect.y += self.move_y
-        else:
-            self.rect.x -= self.move_x
-            self.rect.y -= self.move_y
-            self.move_x, self.move_y = 0, 0
-            self.moving = False
-        if pygame.sprite.spritecollideany(self, shot_group):
-            if current_weapon == 'wooden_bow':
-                self.damage = 1
-                shot_group.update(True)
-        if pygame.sprite.spritecollideany(self, melee_group) and self.melee_strike:
-            if current_weapon == 'iron_sword':
-                self.damage = 4
-        self.hp -= self.damage
-        self.damage = 0
-        if self.hp <= 0 or not pygame.sprite.spritecollideany(self, rooms_group):
-            Particle(4, 1, self.rect.x, self.rect.y,
-                     pygame.transform.scale(enemy_dead_sheet, (288, 72)))
-            self.kill()
-        self.melee_strike = False
-        if len(melee_group) == 0:
-            self.melee_strike = True
+                self.rect.x -= self.move_x
+                self.rect.y -= self.move_y
+                self.move_x, self.move_y = 0, 0
+                self.moving = False
+            if pygame.sprite.spritecollideany(self, shot_group):
+                if current_weapon == 'wooden_bow':
+                    self.damage = 1
+                    shot_group.update(True)
+            if pygame.sprite.spritecollideany(self, melee_group) and self.melee_strike:
+                if current_weapon == 'iron_sword':
+                    self.damage = 4
+            self.hp -= self.damage
+            self.damage = 0
+            if self.hp <= 0 or not pygame.sprite.spritecollideany(self, rooms_group):
+                Particle(4, 1, self.rect.x, self.rect.y,
+                         pygame.transform.scale(enemy_dead_sheet, (288, 72)))
+                self.kill()
+            self.melee_strike = False
+            if len(melee_group) == 0:
+                self.melee_strike = True
 
 
 class Goblin(pygame.sprite.Sprite):
@@ -1042,34 +1043,32 @@ class Goblin(pygame.sprite.Sprite):
                  for i in range(6)]
 
     def update(self, close=False):
+        self.cur_frame = (self.cur_frame + 1) % len(self.frames[:self.half_frames])
+        self.image = self.frames[:self.half_frames][self.cur_frame]
         self.move_x, self.move_y = 0, 0
         if close:
             self.close = not self.close
-        if (self.rect.x // ts, self.rect.y // ts) != (player.rect.x // ts, player.rect.y // ts) and\
-                self.close:
-            self.moving = True
-        if self.moving:
+        if self.close:
+            if (self.rect.x // ts, self.rect.y // ts) != (player.rect.x // ts, player.rect.y // ts):
+                self.moving = True
             self.cur_frame = (self.cur_frame + 1) % len(self.frames[self.half_frames:])
             self.image = self.frames[self.half_frames:][self.cur_frame]
-        else:
-            self.cur_frame = (self.cur_frame + 1) % len(self.frames[:self.half_frames])
-            self.image = self.frames[:self.half_frames][self.cur_frame]
-        if self.rect.x // ts < player.rect.x // ts:
-            self.move_x = self.speed
-            self.flip = False
-        elif self.rect.x // ts > player.rect.x // ts:
-            self.move_x = -self.speed
-            self.flip = True
-        if self.rect.y // ts < player.rect.y // ts:
-            self.move_y = self.speed
-        elif self.rect.y // ts > player.rect.y // ts:
-            self.move_y = -self.speed
-        if self.flip:
-            self.image = pygame.transform.flip(self.image, True, False)
-        if not pygame.sprite.spritecollideany(self, walls_group):
-            if self.moving:
-                self.rect.x += self.move_x
-                self.rect.y += self.move_y
+            if self.rect.x // ts < player.rect.x // ts:
+                self.move_x = self.speed
+                self.flip = False
+            elif self.rect.x // ts > player.rect.x // ts:
+                self.move_x = -self.speed
+                self.flip = True
+            if self.rect.y // ts < player.rect.y // ts:
+                self.move_y = self.speed
+            elif self.rect.y // ts > player.rect.y // ts:
+                self.move_y = -self.speed
+            if self.flip:
+                self.image = pygame.transform.flip(self.image, True, False)
+            if not pygame.sprite.spritecollideany(self, walls_group):
+                if self.moving:
+                    self.rect.x += self.move_x
+                    self.rect.y += self.move_y
         else:
             self.rect.x -= self.move_x
             self.rect.y -= self.move_y
@@ -1122,24 +1121,25 @@ class Bomber(pygame.sprite.Sprite):
             self.close = close
         self.cur_frame = (self.cur_frame + 1) % len(self.frames)
         self.image = self.frames[self.cur_frame]
-        if len([self.rect.y + j for j in range(self.rect.height + 1)
-                if self.rect.y + j in
-                [player.rect.y + i for i in range(player.rect.height + 1)]]) >= 1 and self.close:
-            if self.rect.x < player.rect.x:
-                if not self.bomb or not self.bomb.alive():
-                    self.time += 1
-                    if self.time == 25:
-                        self.bomb = Bomb(10, 1, self.rect.x, self.rect.y)
-                        self.time = 0
-        if pygame.sprite.spritecollideany(self, shot_group):
-            if current_weapon == 'wooden_bow':
-                self.damage = 1
-                shot_group.update(True)
-        self.hp -= self.damage
-        self.damage = 0
-        if self.hp <= 0 or not pygame.sprite.spritecollideany(self, rooms_group):
-            Particle(4, 1, self.rect.x, self.rect.y, enemy_dead_sheet)
-            self.kill()
+        if self.close:
+            if len([self.rect.y + j for j in range(self.rect.height + 1)
+                    if self.rect.y + j in
+                    [player.rect.y + i for i in range(player.rect.height + 1)]]) >= 1:
+                if self.rect.x < player.rect.x:
+                    if not self.bomb or not self.bomb.alive():
+                        self.time += 1
+                        if self.time == 25:
+                            self.bomb = Bomb(10, 1, self.rect.x, self.rect.y)
+                            self.time = 0
+            if pygame.sprite.spritecollideany(self, shot_group):
+                if current_weapon == 'wooden_bow':
+                    self.damage = 1
+                    shot_group.update(True)
+            self.hp -= self.damage
+            self.damage = 0
+            if self.hp <= 0 or not pygame.sprite.spritecollideany(self, rooms_group):
+                Particle(4, 1, self.rect.x, self.rect.y, enemy_dead_sheet)
+                self.kill()
 
 
 class Bomb(pygame.sprite.Sprite):
