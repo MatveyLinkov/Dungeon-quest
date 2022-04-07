@@ -958,10 +958,10 @@ class Skull(pygame.sprite.Sprite):
                  for i in range(8)]
 
     def update(self, close=False):
-        if close:
-            self.close = close
         self.cur_frame = (self.cur_frame + 1) % len(self.frames)
         self.image = self.frames[self.cur_frame]
+        if close:
+            self.close = not self.close
         if self.close:
             if len(list(map(lambda z: z + self.rect.x,
                             filter(lambda y: y + self.rect.x in list(
@@ -1006,13 +1006,13 @@ class Skull(pygame.sprite.Sprite):
                     self.damage = 4
             self.hp -= self.damage
             self.damage = 0
-            if self.hp <= 0 or not pygame.sprite.spritecollideany(self, rooms_group):
-                Particle(4, 1, self.rect.x, self.rect.y,
-                         pygame.transform.scale(enemy_dead_sheet, (288, 72)))
-                self.kill()
-            self.melee_strike = False
-            if len(melee_group) == 0:
-                self.melee_strike = True
+        if self.hp <= 0 or not pygame.sprite.spritecollideany(self, rooms_group):
+            Particle(4, 1, self.rect.x, self.rect.y,
+                     pygame.transform.scale(enemy_dead_sheet, (288, 72)))
+            self.kill()
+        self.melee_strike = False
+        if len(melee_group) == 0:
+            self.melee_strike = True
 
 
 class Goblin(pygame.sprite.Sprite):
@@ -1118,10 +1118,10 @@ class Bomber(pygame.sprite.Sprite):
                  for i in range(6)]
 
     def update(self, close=False):
-        if close:
-            self.close = close
         self.cur_frame = (self.cur_frame + 1) % len(self.frames)
         self.image = self.frames[self.cur_frame]
+        if close:
+            self.close = not self.close
         if self.close:
             if len([self.rect.y + j for j in range(self.rect.height + 1)
                     if self.rect.y + j in
@@ -1138,9 +1138,9 @@ class Bomber(pygame.sprite.Sprite):
                     shot_group.update(True)
             self.hp -= self.damage
             self.damage = 0
-            if self.hp <= 0 or not pygame.sprite.spritecollideany(self, rooms_group):
-                Particle(4, 1, self.rect.x, self.rect.y, enemy_dead_sheet)
-                self.kill()
+        if self.hp <= 0 or not pygame.sprite.spritecollideany(self, rooms_group):
+            Particle(4, 1, self.rect.x, self.rect.y, enemy_dead_sheet)
+            self.kill()
 
 
 class Bomb(pygame.sprite.Sprite):
@@ -1503,6 +1503,8 @@ if __name__ == '__main__':
                     [s.kill() for s in all_sprites]
                     [s.kill() for s in weapon_group]
                     [s.kill() for s in all_cells_group]
+                    if str(minigame_count) == map_number:
+                        minigame_count -= 1
                     completed_levels.clear()
                     destroyed_barriers.clear()
                     dungeon = Dungeon(f'dungeon_{map_number}.tmx')
